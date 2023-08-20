@@ -39,23 +39,24 @@ var (
 var web2binCmd = &cobra.Command{
 	Use:   "web2bin",
 	Short: "Covert the web content in base64 format to binary",
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		// read file content
 		bytes, err := os.ReadFile(filename)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		// convert base64 to binary
 		ans := make([]byte, base64.RawURLEncoding.DecodedLen(len(bytes)))
 		n, err := base64.RawURLEncoding.Decode(ans, bytes)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		// write binary to file
 		err = os.WriteFile(output, ans[:n], 0644)
 		if err != nil {
-			panic(err)
+			return err
 		}
+		return nil
 	},
 }
 
