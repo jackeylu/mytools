@@ -25,8 +25,9 @@ import (
 )
 
 var (
-	start int64
-	end   int64
+	start       int64
+	end         int64
+	milliSecond int64
 	// lottoCmd represents the lotto command
 	lottoCmd = &cobra.Command{
 		Use:   "lotto",
@@ -35,6 +36,10 @@ var (
 			if start >= end || start < 0 {
 				return errors.New(fmt.Sprintf("start number must be less than end number and must be greater or equal then zero, but start = %d, end = %d",
 					start, end))
+			}
+			if milliSecond < 0 {
+				fmt.Println("negativte value for milliSecond, use default value 100ms.")
+				milliSecond = 100
 			}
 			work()
 			return nil
@@ -56,7 +61,7 @@ func work() {
 		num := rand.Int63n(end-start) + start
 		fmt.Printf("%d", num)
 		// 休眠0.5秒钟
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Millisecond * time.Duration(milliSecond))
 
 		select {
 		case <-ch:
@@ -86,4 +91,5 @@ func init() {
 	// is called directly, e.g.:
 	lottoCmd.Flags().Int64VarP(&start, "start", "s", 1, "The starting number.")
 	lottoCmd.Flags().Int64VarP(&end, "end", "e", 100, "The ending number.")
+	lottoCmd.Flags().Int64VarP(&milliSecond, "ms", "m", 100, "The sleeping interval.")
 }
