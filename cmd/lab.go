@@ -49,6 +49,9 @@ The namelist is a csv type file with 'name' and 'no' columns.
 The reports in the given directory are in the format of '$name-$no-$lab.doc' or '$name-$no-$lab.docx'.
 The generated result includes the submmited flag for each student and those file with illegal filename format.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if labName == "" {
+			panic(fmt.Errorf("labName is empty."))
+		}
 		nameArray := readNameList()
 		// 文件名模式: `.*\.(doc|docx)` 表示匹配所有以 .doc 或 .docx 结尾的文件
 		fileNamePattern := `.*\.(doc|docx)`
@@ -75,7 +78,7 @@ func init() {
 	labCmd.Flags().StringVarP(&labName, "labName", "l", "", "the lab name in filename")
 }
 
-func readNameList() []string {
+func readNameList() [][]string {
 	file, err := os.Open(namelist)
 	if err != nil {
 		panic(fmt.Errorf("error opening namelist file:%v", err))
@@ -90,7 +93,7 @@ func readNameList() []string {
 	// 将每一行分割成字段
 	lines := strings.Split(string(content), "\n")
 	// 初始化结果数组
-	result := make([]string, 0, len(lines)-1)
+	result := make([][]string, 0, len(lines)-1)
 
 	// 将分割后的字段添加到结果数组中
 	for _, line := range lines {
@@ -100,12 +103,16 @@ func readNameList() []string {
 			panic(fmt.Errorf("error reading namelist file:%v, expected two columns but not matched",
 				fields))
 		}
-		result = append(result, fields...)
+		fields[0] = strings.TrimSpace(fields[0])
+		fields[1] = strings.TrimSpace(fields[1])
+		result = append(result, fields)
 	}
 	return result
 }
 
-func traverseFiles(folderPath, labName string, result []string, fileNamePattern string) {
+func traverseFiles(folderPath, labName string, result [][]string, fileNamePattern string) {
+	illegalFileNames := make([]string, 0)
+	notFounds := make([]string, 0)
 	err := filepath.Walk(folderPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -114,10 +121,25 @@ func traverseFiles(folderPath, labName string, result []string, fileNamePattern 
 
 		fileName := filepath.Base(path)
 		if match, _ := regexp.MatchString(fileNamePattern, fileName); match {
-			// TODO 根据 fileName 抽取出姓名 学号 实验名
-			// 如果抽取不到，将该文件标记为非法文件名
-			// 如果抽取到，在result数组中找到该记录，并标记Y
-			fmt.Println("Found file:", path)
+			fields := strings.Split(fileName, "-")
+			if len(fields) != 3 {
+				illegalFileNames = append(illegalFileNames, fileName)
+				return nil
+			}
+			name, sno, experiment := fields[0], fields[1], fields[2]
+			experiment = strings.Split(experiment, ".")[0]
+			if experiment != labName {
+				illegalFileNames = append(illegalFileNames, fileName)
+				return nil
+			}
+			idx := checkAndMark(result, name, sno)
+			if idx == -1 {
+				// 如果不存在，将该文件名添加到未匹配数组中
+				notFounds = append(notFounds, fileName)
+			} else {
+				// 存在，将该文件名添加到匹配数组中
+				result[idx] = append(result[idx], "Y")
+			}
 		}
 
 		return nil
@@ -126,4 +148,29 @@ func traverseFiles(folderPath, labName string, result []string, fileNamePattern 
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
+	for _, v := range result {
+		fmt.Println(strings.Join(v, ","))
+	}
+	if len(illegalFileNames) > 0 {
+		fmt.Fprintln(os.Stderr, "Illegal file name:")
+		for _, v := range illegalFileNames {
+			fmt.Fprintln(os.Stderr, v)
+		}
+	}
+	if len(notFounds) > 0 {
+		fmt.Fprintln(os.Stderr, "Not found:")
+		for _, v := range notFounds {
+			fmt.Fprintln(os.Stderr, v)
+		}
+	}
+}
+
+func checkAndMark(result [][]string, name, sno string) int {
+	for i, v := range result {
+		if v[0] == name && v[1] == sno {
+			return i
+		}
+	}
+
+	return -1
 }
