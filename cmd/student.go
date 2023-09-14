@@ -108,6 +108,7 @@ func findStudentByKey(dataset, key string) {
 			return
 		}
 	}
+	fmt.Println("Student not found")
 }
 
 func fileExists(filename string) bool {
