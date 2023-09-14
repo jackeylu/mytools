@@ -98,9 +98,12 @@ func readNameList() [][]string {
 	// 将分割后的字段添加到结果数组中
 	for _, line := range lines {
 		fields := strings.Split(line, ",")
+		if fields == nil || len(fields) < 2 {
+			continue
+		}
 		// 检查 字段 数是否等于2，不等于则报错
 		if len(fields) != 2 {
-			panic(fmt.Errorf("error reading namelist file:%v, expected two columns but not matched",
+			panic(fmt.Errorf("error reading namelist fields:%v, expected two columns but not matched",
 				fields))
 		}
 		fields[0] = strings.TrimSpace(fields[0])
@@ -122,17 +125,17 @@ func traverseFiles(folderPath, labName string, result [][]string, fileNamePatter
 		fileName := filepath.Base(path)
 		if match, _ := regexp.MatchString(fileNamePattern, fileName); match {
 			fields := strings.Split(fileName, "-")
-			if len(fields) != 3 {
+			if len(fields) < 3 {
 				illegalFileNames = append(illegalFileNames, fileName)
 				return nil
 			}
-			name, sno, experiment := fields[0], fields[1], fields[2]
+			name, sno, experiment := fields[0], fields[1], strings.Join(fields[2:], "-")
 			experiment = strings.Split(experiment, ".")[0]
 			if experiment != labName {
 				illegalFileNames = append(illegalFileNames, fileName)
 				return nil
 			}
-			idx := checkAndMark(result, name, sno)
+			idx := findRecord(result, name, sno)
 			if idx == -1 {
 				// 如果不存在，将该文件名添加到未匹配数组中
 				notFounds = append(notFounds, fileName)
@@ -165,7 +168,8 @@ func traverseFiles(folderPath, labName string, result [][]string, fileNamePatter
 	}
 }
 
-func checkAndMark(result [][]string, name, sno string) int {
+// Return the index of first found record, else return -1
+func findRecord(result [][]string, name, sno string) int {
 	for i, v := range result {
 		if v[0] == name && v[1] == sno {
 			return i
