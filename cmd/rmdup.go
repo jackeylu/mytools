@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -34,6 +35,8 @@ var (
 	dir string
 	// the extension of the filename
 	ext string
+	// the confirmed flag when renaming
+	confirmed bool
 )
 
 // rmdupCmd represents the rmdup command
@@ -60,7 +63,9 @@ func init() {
 	// rmdupCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rmdupCmd.Flags().StringVarP(&dir, "dir", "d", "./", "the directory to clean")
 	rmdupCmd.Flags().StringVarP(&ext, "ext", "e", "",
-		"the extension of the filename, like .zip , default is none for every file, otherwise only for file with specificated extension.")
+		`the extension of the filename, like .zip , default is none for every file, 
+		otherwise only for file with specificated extension.`)
+	rmdupCmd.Flags().BoolVarP(&confirmed, "confirmed", "c", false, "confirm when renaming")
 }
 
 func _clean(filename string) string {
@@ -111,13 +116,38 @@ func rmdup() {
 		cleanedName := cleanName(filename)
 		if cleanedName != "" && cleanedName != filename {
 			// 重命名filename为cleanedName
-			err := os.Rename(filepath.Join(dir, filename), filepath.Join(dir, cleanedName))
+			from, to := filepath.Join(dir, filename), filepath.Join(dir, cleanedName)
+			if !confirmed {
+				if ignore(from, to) {
+					continue
+				}
+			}
+
+			err := os.Rename(from, to)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
-			fmt.Printf("rename %s to %s\n", filename, cleanedName)
+			fmt.Printf("renamed %s to %s\n", filename, cleanedName)
 		}
 	}
 
+}
+
+func ignore(from, to string) bool {
+	for {
+		// 获取终端输入的字符，如果是 Y 则进入下一步，
+		// 否则提示重新输入并且继续监听终端输入
+		var input string
+		fmt.Printf("Renaming  %s to %s [Y/n]:", from, to)
+		fmt.Scanf("%s", &input)
+		input = strings.ToLower(input)
+		if input == "y" {
+			return true
+		} else if input == "n" {
+			return false
+		} else {
+			fmt.Println("Please input Y or N")
+		}
+	}
 }
