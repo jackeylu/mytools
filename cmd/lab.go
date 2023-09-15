@@ -36,6 +36,7 @@ var (
 	workingDir string
 	labName    string
 	namelist   string
+	debug      bool
 )
 
 // labCmd represents the lab command
@@ -76,6 +77,7 @@ func init() {
 	labCmd.Flags().StringVarP(&namelist, "namelist", "n", "./namelist.csv",
 		"The namelist with name and no columns")
 	labCmd.Flags().StringVarP(&labName, "labName", "l", "", "the lab name in filename")
+	labCmd.Flags().BoolVarP(&debug, "debug", "D", false, "show debug result or only the result")
 }
 
 func readNameList() [][]string {
@@ -93,10 +95,15 @@ func readNameList() [][]string {
 	// 将每一行分割成字段
 	lines := strings.Split(string(content), "\n")
 	// 初始化结果数组
+	// ignore the header line
 	result := make([][]string, 0, len(lines)-1)
 
 	// 将分割后的字段添加到结果数组中
-	for _, line := range lines {
+	for i, line := range lines {
+		if i == 0 {
+			// ignore the header line
+			continue
+		}
 		fields := strings.Split(line, ",")
 		if fields == nil || len(fields) < 2 {
 			continue
@@ -113,9 +120,14 @@ func readNameList() [][]string {
 	return result
 }
 
-func traverseFiles(folderPath, labName string, result [][]string, fileNamePattern string) {
+func traverseFiles(folderPath, labName string, dataset [][]string, fileNamePattern string) {
 	illegalFileNames := make([]string, 0)
 	notFounds := make([]string, 0)
+	result := make([]string, len(dataset))
+	for i := 0; i < len(result); i++ {
+		// Not submitted at default
+		result[i] = "N"
+	}
 	err := filepath.Walk(folderPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -135,13 +147,13 @@ func traverseFiles(folderPath, labName string, result [][]string, fileNamePatter
 				illegalFileNames = append(illegalFileNames, fileName)
 				return nil
 			}
-			idx := findRecord(result, name, sno)
+			idx := findRecord(dataset, name, sno)
 			if idx == -1 {
 				// 如果不存在，将该文件名添加到未匹配数组中
 				notFounds = append(notFounds, fileName)
 			} else {
-				// 存在，将该文件名添加到匹配数组中
-				result[idx] = append(result[idx], "Y")
+				// 存在，标记为已提交
+				result[idx] = "Y"
 			}
 		}
 
@@ -151,8 +163,17 @@ func traverseFiles(folderPath, labName string, result [][]string, fileNamePatter
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
-	for _, v := range result {
-		fmt.Println(strings.Join(v, ","))
+	if debug {
+		fmt.Println(strings.Join(append(dataset[0], labName), ","))
+	} else {
+		fmt.Println(labName)
+	}
+	for i := 0; i < len(result); i++ {
+		if debug {
+			fmt.Printf("%s,%s,%s\n", dataset[i][0], dataset[i][1], result[i])
+		} else {
+			fmt.Println(result[i])
+		}
 	}
 	if len(illegalFileNames) > 0 {
 		fmt.Fprintln(os.Stderr, "Illegal file name:")
