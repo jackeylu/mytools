@@ -22,10 +22,10 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"encoding/csv"
 	"fmt"
 	"os"
 
+	"github.com/jackeylu/mytools/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -89,8 +89,21 @@ func findStudent(csvfile, key string) {
 }
 
 func findStudentByKey(csvfile, key string) {
+	fmt.Fprintln(os.Stderr, "Using namelist file:", csvfile)
 	// read the csvfile into slice of Student
-	lines := readCsvFile(csvfile)
+	lines := make([]Student, 0)
+	util.ReadCsvFile(csvfile, 4, func(line []string) {
+		if len(line) != 4 {
+			panic(fmt.Errorf("error reading namelist fields:%v, expected four columns but not matched",
+				line))
+		}
+		lines = append(lines, Student{
+			Name:  line[0],
+			No:    line[1],
+			Class: line[2],
+			Grade: line[3],
+		})
+	})
 	// find the student by key
 	student := findStudentByKeyInSlice(lines, key)
 	if student == nil {
@@ -100,50 +113,6 @@ func findStudentByKey(csvfile, key string) {
 	fmt.Printf("student %s found with result: %v\n", student.Name, student)
 }
 
-func readCsvFile(filename string) []Student {
-	if !fileExists(filename) {
-		panic(fmt.Sprintf("file %s not found", filename))
-	}
-	file, err := os.Open(filename)
-	if err != nil {
-		panic(fmt.Errorf("error opening namelist file:%v", err))
-	}
-
-	defer file.Close()
-	// 创建CSV阅读器
-	reader := csv.NewReader(file)
-
-	// 读取CSV文件的第一行，作为列名
-	columns, err := reader.Read()
-	if err != nil {
-		panic(fmt.Errorf("Error reading header: %v", err))
-	}
-	if columns == nil || len(columns) != 4 {
-		panic(fmt.Errorf("error reading header, expected four columns but not matched"))
-	}
-	// 读取文件中的每一行
-	lines, err := reader.ReadAll()
-	if err != nil {
-		panic(fmt.Errorf("error reading namelist file:%v", err))
-	}
-	// 创建学生切片
-	students := make([]Student, len(lines))
-	for i, line := range lines {
-		if len(line) != 4 {
-			panic(fmt.Errorf("error reading namelist fields:%v, expected four columns but not matched",
-				line))
-		}
-		students[i] = Student{
-			Name:  line[0],
-			No:    line[1],
-			Class: line[2],
-			Grade: line[3],
-		}
-	}
-	return students
-
-}
-
 func findStudentByKeyInSlice(lines []Student, key string) *Student {
 	for _, line := range lines {
 		if line.No == key || line.Name == key {
@@ -151,12 +120,4 @@ func findStudentByKeyInSlice(lines []Student, key string) *Student {
 		}
 	}
 	return nil
-}
-
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
 }
