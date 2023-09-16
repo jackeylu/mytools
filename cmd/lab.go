@@ -113,7 +113,7 @@ func traverseFiles(folderPath, labName string, students []CourseStudent, fileNam
 	result := make([]string, len(students))
 	for i := 0; i < len(result); i++ {
 		// Not submitted at default
-		result[i] = "N"
+		result[i] = ""
 	}
 	err := filepath.Walk(folderPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -140,7 +140,7 @@ func traverseFiles(folderPath, labName string, students []CourseStudent, fileNam
 				notFounds = append(notFounds, fileName)
 			} else {
 				// 存在，标记为已提交
-				result[idx] = "Y"
+				result[idx] = "已提交"
 			}
 		}
 
@@ -162,17 +162,20 @@ func traverseFiles(folderPath, labName string, students []CourseStudent, fileNam
 			fmt.Println(result[i])
 		}
 	}
+	fmt.Println("---------")
 	if len(illegalFileNames) > 0 {
 		fmt.Fprintln(os.Stderr, "Illegal file name:")
 		for _, v := range illegalFileNames {
 			fmt.Fprintln(os.Stderr, v)
 		}
+		fmt.Println("---------")
 	}
 	if len(notFounds) > 0 {
 		fmt.Fprintln(os.Stderr, "Not found:")
 		for _, v := range notFounds {
 			fmt.Fprintln(os.Stderr, v)
 		}
+		fmt.Println("---------")
 	}
 }
 
