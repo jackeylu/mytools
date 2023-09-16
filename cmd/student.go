@@ -22,20 +22,31 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"encoding/csv"
 	"fmt"
-	"io"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
-	// the filename of the dataset
-	dataset string
+	// the filename of the csvfile
+	csvfile string
 	// finding by the key, may be the student's name or No.
 	key string
 )
+
+type Student struct {
+	Name  string
+	No    string
+	Class string
+	Grade string
+}
+
+func (s Student) String() string {
+	return fmt.Sprintf("Name: %s, NO.: %s, Class: %s, Grade: %s", s.Name, s.No, s.Class, s.Grade)
+}
 
 // studentCmd represents the student command
 var studentCmd = &cobra.Command{
@@ -43,7 +54,7 @@ var studentCmd = &cobra.Command{
 	Short: "find the class name of given student with name or student no.",
 	Long:  `Find the class name of given student by given dataset.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		findStudent(dataset, key)
+		findStudent(csvfile, key)
 	},
 }
 
@@ -59,56 +70,87 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// studentCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	studentCmd.Flags().StringVarP(&dataset, "dataset", "d", "", "the dataset file")
+	studentCmd.Flags().StringVarP(&csvfile, "dataset", "d", "", "the dataset file")
 	studentCmd.Flags().StringVarP(&key, "key", "k", "", "the key of the student")
 }
 
-func findStudent(dataset, key string) {
-	if dataset == "" {
+func findStudent(csvfile, key string) {
+	// check if the dataset file exists
+	if csvfile == "" {
+		csvfile = viper.GetString("lab.all-student")
+	}
+	if csvfile == "" {
 		panic("dataset is empty")
 	}
 	if key == "" {
 		panic("key is empty")
 	}
-	if !fileExists(dataset) {
-		panic("dataset file not found")
-	}
-	findStudentByKey(dataset, key)
+	findStudentByKey(csvfile, key)
 }
 
-func findStudentByKey(dataset, key string) {
-	file, err := os.Open(dataset)
+func findStudentByKey(csvfile, key string) {
+	// read the csvfile into slice of Student
+	lines := readCsvFile(csvfile)
+	// find the student by key
+	student := findStudentByKeyInSlice(lines, key)
+	if student == nil {
+		fmt.Printf("Can not find any student with keyword: %s\n", key)
+		return
+	}
+	fmt.Printf("student %s found with result: %v\n", student.Name, student)
+}
+
+func readCsvFile(filename string) []Student {
+	if !fileExists(filename) {
+		panic(fmt.Sprintf("file %s not found", filename))
+	}
+	file, err := os.Open(filename)
 	if err != nil {
 		panic(fmt.Errorf("error opening namelist file:%v", err))
 	}
 
 	defer file.Close()
-	bytes, err := io.ReadAll(file)
+	// 创建CSV阅读器
+	reader := csv.NewReader(file)
+
+	// 读取CSV文件的第一行，作为列名
+	columns, err := reader.Read()
 	if err != nil {
-		panic(fmt.Errorf("error reading file:%v", err))
+		panic(fmt.Errorf("Error reading header: %v", err))
 	}
-	// 将每一行分割成字段
-	lines := strings.Split(string(bytes), "\n")
-	// 将分割后的字段添加到结果数组中
+	if columns == nil || len(columns) != 4 {
+		panic(fmt.Errorf("error reading header, expected four columns but not matched"))
+	}
+	// 读取文件中的每一行
+	lines, err := reader.ReadAll()
+	if err != nil {
+		panic(fmt.Errorf("error reading namelist file:%v", err))
+	}
+	// 创建学生切片
+	students := make([]Student, len(lines))
+	for i, line := range lines {
+		if len(line) != 4 {
+			panic(fmt.Errorf("error reading namelist fields:%v, expected four columns but not matched",
+				line))
+		}
+		students[i] = Student{
+			Name:  line[0],
+			No:    line[1],
+			Class: line[2],
+			Grade: line[3],
+		}
+	}
+	return students
+
+}
+
+func findStudentByKeyInSlice(lines []Student, key string) *Student {
 	for _, line := range lines {
-		fields := strings.Split(line, ",")
-		if fields == nil || len(fields) < 3 {
-			continue
-		}
-		// 检查 字段 数是否等于3，不等于则报错
-		if len(fields) != 3 {
-			panic(fmt.Errorf("error reading namelist fields:%v, expected two columns but not matched",
-				fields))
-		}
-		name := strings.TrimSpace(fields[0])
-		sno := strings.TrimSpace(fields[1])
-		class := strings.TrimSpace(fields[2])
-		if name == key || sno == key {
-			fmt.Printf("Student Name: %s, Student ID: %s, Student Classroom: %s\n", name, sno, class)
-			return
+		if line.No == key || line.Name == key {
+			return &line
 		}
 	}
-	fmt.Println("Student not found")
+	return nil
 }
 
 func fileExists(filename string) bool {
