@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${file}",
-            "args": ["lab","-n", "name.txt", "-l","Lab1"]
+            "args": ["lab","-c", "php-2023-class-1", "-l","Lab1"]
         }
 
     ]

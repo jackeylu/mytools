@@ -23,21 +23,28 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/jackeylu/mytools/util"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
 	workingDir string
 	labName    string
-	namelist   string
+	// like php-2023-class-1
+	coursename string
 	debug      bool
 )
+
+type CourseStudent struct {
+	Name string
+	Sno  string
+}
 
 // labCmd represents the lab command
 var labCmd = &cobra.Command{
@@ -53,10 +60,15 @@ The generated result includes the submmited flag for each student and those file
 		if labName == "" {
 			panic(fmt.Errorf("labName is empty."))
 		}
-		nameArray := readNameList()
+		if coursename == "" {
+			panic(fmt.Errorf("coursename is empty.Should be like php-2023-class-1"))
+		} else {
+			csvfile = viper.GetString("lab.class." + coursename)
+		}
+		students := readNameList(csvfile)
 		// 文件名模式: `.*\.(doc|docx)` 表示匹配所有以 .doc 或 .docx 结尾的文件
 		fileNamePattern := `.*\.(doc|docx)`
-		traverseFiles(workingDir, labName, nameArray, fileNamePattern)
+		traverseFiles(workingDir, labName, students, fileNamePattern)
 	},
 }
 
@@ -74,56 +86,31 @@ func init() {
 	// labCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	labCmd.Flags().StringVarP(&workingDir, "workingDir", "d", "./",
 		"the directory contains reports.")
-	labCmd.Flags().StringVarP(&namelist, "namelist", "n", "./namelist.csv",
-		"The namelist with name and no columns")
+	labCmd.Flags().StringVarP(&coursename, "coursename", "c", "",
+		"The coursename , like php-2023-class-1")
 	labCmd.Flags().StringVarP(&labName, "labName", "l", "", "the lab name in filename")
 	labCmd.Flags().BoolVarP(&debug, "debug", "D", false, "show debug result or only the result")
 }
 
-func readNameList() [][]string {
-	file, err := os.Open(namelist)
-	if err != nil {
-		panic(fmt.Errorf("error opening namelist file:%v", err))
-	}
-
-	defer file.Close()
-
-	content, err := io.ReadAll(file)
-	if err != nil {
-		panic(fmt.Errorf("error reading file:%v", err))
-	}
-	// 将每一行分割成字段
-	lines := strings.Split(string(content), "\n")
-	// 初始化结果数组
-	// ignore the header line
-	result := make([][]string, 0, len(lines)-1)
-
-	// 将分割后的字段添加到结果数组中
-	for i, line := range lines {
-		if i == 0 {
-			// ignore the header line
-			continue
+func readNameList(csvfile string) []CourseStudent {
+	lines := make([]CourseStudent, 0)
+	util.ReadCsvFile(csvfile, 2, func(line []string) {
+		if len(line) != 2 {
+			panic(fmt.Errorf("error reading namelist fields:%v, expected 2 columns but not matched",
+				line))
 		}
-		fields := strings.Split(line, ",")
-		if fields == nil || len(fields) < 2 {
-			continue
-		}
-		// 检查 字段 数是否等于2，不等于则报错
-		if len(fields) != 2 {
-			panic(fmt.Errorf("error reading namelist fields:%v, expected two columns but not matched",
-				fields))
-		}
-		fields[0] = strings.TrimSpace(fields[0])
-		fields[1] = strings.TrimSpace(fields[1])
-		result = append(result, fields)
-	}
-	return result
+		lines = append(lines, CourseStudent{
+			Name: line[0],
+			Sno:  line[1],
+		})
+	})
+	return lines
 }
 
-func traverseFiles(folderPath, labName string, dataset [][]string, fileNamePattern string) {
+func traverseFiles(folderPath, labName string, students []CourseStudent, fileNamePattern string) {
 	illegalFileNames := make([]string, 0)
 	notFounds := make([]string, 0)
-	result := make([]string, len(dataset))
+	result := make([]string, len(students))
 	for i := 0; i < len(result); i++ {
 		// Not submitted at default
 		result[i] = "N"
@@ -147,7 +134,7 @@ func traverseFiles(folderPath, labName string, dataset [][]string, fileNamePatte
 				illegalFileNames = append(illegalFileNames, fileName)
 				return nil
 			}
-			idx := findRecord(dataset, name, sno)
+			idx := findRecord(students, name, sno)
 			if idx == -1 {
 				// 如果不存在，将该文件名添加到未匹配数组中
 				notFounds = append(notFounds, fileName)
@@ -164,13 +151,13 @@ func traverseFiles(folderPath, labName string, dataset [][]string, fileNamePatte
 		fmt.Println("Error:", err)
 	}
 	if debug {
-		fmt.Println(strings.Join(append(dataset[0], labName), ","))
+		fmt.Printf("%s,%s,%s\n", "Name", "Sno", labName)
 	} else {
 		fmt.Println(labName)
 	}
 	for i := 0; i < len(result); i++ {
 		if debug {
-			fmt.Printf("%s,%s,%s\n", dataset[i][0], dataset[i][1], result[i])
+			fmt.Printf("%s,%s,%s\n", students[i].Name, students[i].Sno, result[i])
 		} else {
 			fmt.Println(result[i])
 		}
@@ -190,9 +177,9 @@ func traverseFiles(folderPath, labName string, dataset [][]string, fileNamePatte
 }
 
 // Return the index of first found record, else return -1
-func findRecord(result [][]string, name, sno string) int {
-	for i, v := range result {
-		if v[0] == name && v[1] == sno {
+func findRecord(students []CourseStudent, name, sno string) int {
+	for i, v := range students {
+		if v.Name == name && v.Sno == sno {
 			return i
 		}
 	}
