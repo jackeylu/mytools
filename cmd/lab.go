@@ -65,6 +65,9 @@ The generated result includes the submmited flag for each student and those file
 		} else {
 			csvfile = viper.GetString("lab.class." + coursename)
 		}
+		if debug {
+			fmt.Fprintln(os.Stderr, "workingDir:", workingDir, "labName:", labName, "csvfile:", csvfile)
+		}
 		students := readNameList(csvfile)
 		// 文件名模式: `.*\.(doc|docx)` 表示匹配所有以 .doc 或 .docx 结尾的文件
 		fileNamePattern := `.*\.(doc|docx)`
