@@ -45,7 +45,7 @@ type Student struct {
 }
 
 func (s Student) String() string {
-	return fmt.Sprintf("Name: %s, NO.: %s, Class: %s, Grade: %s", s.Name, s.No, s.Class, s.Grade)
+	return fmt.Sprintf("Tag: %s-%s, Class: %s, Grade: %s", s.Name, s.No, s.Class, s.Grade)
 }
 
 // studentCmd represents the student command
