@@ -58,8 +58,9 @@ The reports in the given directory are in the format of '$name-$no-$lab.doc' or 
 The generated result includes the submmited flag for each student and those file with illegal filename format.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if labName == "" {
-			panic(fmt.Errorf("labName is empty."))
+			panic(fmt.Errorf("labName is empty"))
 		}
+		var excelFile string
 		if coursename == "" {
 			panic(fmt.Errorf("coursename is empty.Should be like php-2023-class-1"))
 		} else {
@@ -95,9 +96,9 @@ func init() {
 	labCmd.Flags().BoolVarP(&debug, "debug", "D", false, "show debug result or only the result")
 }
 
-func readNameList(csvfile string) []CourseStudent {
+func readNameList(excelFile string) []CourseStudent {
 	lines := make([]CourseStudent, 0)
-	util.ReadExcelFile(csvfile, 2, func(line []string) {
+	util.ReadExcelFile(excelFile, 2, func(line []string) {
 		if len(line) != 2 {
 			panic(fmt.Errorf("error reading namelist fields:%v, expected 2 columns but not matched",
 				line))
