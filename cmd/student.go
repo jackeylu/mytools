@@ -31,8 +31,8 @@ import (
 )
 
 var (
-	// the filename of the csvfile
-	csvfile string
+	// the filename of the excelFile
+	excelFile string
 	// finding by the key, may be the student's name or No.
 	key string
 )
@@ -54,7 +54,7 @@ var studentCmd = &cobra.Command{
 	Short: "find the class name of given student with name or student no.",
 	Long:  `Find the class name of given student by given dataset.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		findStudent(csvfile, key)
+		findStudent(excelFile, key)
 	},
 }
 
@@ -70,29 +70,29 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// studentCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	studentCmd.Flags().StringVarP(&csvfile, "dataset", "d", "", "the dataset file")
+	studentCmd.Flags().StringVarP(&excelFile, "dataset", "d", "", "the dataset file")
 	studentCmd.Flags().StringVarP(&key, "key", "k", "", "the key of the student")
 }
 
-func findStudent(csvfile, key string) {
+func findStudent(excelFile, key string) {
 	// check if the dataset file exists
-	if csvfile == "" {
-		csvfile = viper.GetString("lab.all-student")
+	if excelFile == "" {
+		excelFile = viper.GetString("lab.all-student")
 	}
-	if csvfile == "" {
+	if excelFile == "" {
 		panic("dataset is empty")
 	}
 	if key == "" {
 		panic("key is empty")
 	}
-	findStudentByKey(csvfile, key)
+	findStudentByKey(excelFile, key)
 }
 
-func findStudentByKey(csvfile, key string) {
-	fmt.Fprintln(os.Stderr, "Using namelist file:", csvfile)
+func findStudentByKey(excelFile, key string) {
+	fmt.Fprintln(os.Stderr, "Using namelist file:", excelFile)
 	// read the csvfile into slice of Student
 	lines := make([]Student, 0)
-	util.ReadCsvFile(csvfile, 4, func(line []string) {
+	util.ReadExcelFile(excelFile, 4, func(line []string) {
 		if len(line) != 4 {
 			panic(fmt.Errorf("error reading namelist fields:%v, expected four columns but not matched",
 				line))
@@ -105,19 +105,19 @@ func findStudentByKey(csvfile, key string) {
 		})
 	})
 	// find the student by key
-	student := findStudentByKeyInSlice(lines, key)
-	if student == nil {
+	if !findStudentByKeyInSlice(lines, key) {
 		fmt.Printf("Can not find any student with keyword: %s\n", key)
 		return
 	}
-	fmt.Printf("student %s found with result: %v\n", student.Name, student)
 }
 
-func findStudentByKeyInSlice(lines []Student, key string) *Student {
+func findStudentByKeyInSlice(lines []Student, key string) bool {
+	var found bool = false
 	for _, line := range lines {
 		if line.No == key || line.Name == key {
-			return &line
+			found = true
+			fmt.Printf("student %s found with result: %v\n", line.Name, line)
 		}
 	}
-	return nil
+	return found
 }

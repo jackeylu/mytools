@@ -63,12 +63,12 @@ The generated result includes the submmited flag for each student and those file
 		if coursename == "" {
 			panic(fmt.Errorf("coursename is empty.Should be like php-2023-class-1"))
 		} else {
-			csvfile = viper.GetString("lab.class." + coursename)
+			excelFile = viper.GetString("lab.class." + coursename)
 		}
 		if debug {
-			fmt.Fprintln(os.Stderr, "workingDir:", workingDir, "labName:", labName, "csvfile:", csvfile)
+			fmt.Fprintln(os.Stderr, "workingDir:", workingDir, "labName:", labName, "csvfile:", excelFile)
 		}
-		students := readNameList(csvfile)
+		students := readNameList(excelFile)
 		// 文件名模式: `.*\.(doc|docx)` 表示匹配所有以 .doc 或 .docx 结尾的文件
 		fileNamePattern := `.*\.(doc|docx)`
 		traverseFiles(workingDir, labName, students, fileNamePattern)
@@ -97,7 +97,7 @@ func init() {
 
 func readNameList(csvfile string) []CourseStudent {
 	lines := make([]CourseStudent, 0)
-	util.ReadCsvFile(csvfile, 2, func(line []string) {
+	util.ReadExcelFile(csvfile, 2, func(line []string) {
 		if len(line) != 2 {
 			panic(fmt.Errorf("error reading namelist fields:%v, expected 2 columns but not matched",
 				line))
