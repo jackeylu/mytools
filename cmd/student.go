@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/atotto/clipboard"
 	"github.com/jackeylu/mytools/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -103,7 +104,7 @@ func findStudentByKey(excelFile, key string) {
 			Class: line[2],
 			Grade: line[3],
 		})
-	})
+	}, true)
 	// find the student by key
 	if !findStudentByKeyInSlice(lines, key) {
 		fmt.Printf("Can not find any student with keyword: %s\n", key)
@@ -117,6 +118,12 @@ func findStudentByKeyInSlice(lines []Student, key string) bool {
 		if line.No == key || line.Name == key {
 			found = true
 			fmt.Printf("student %s found with result: %v\n", line.Name, line)
+			err := clipboard.WriteAll(fmt.Sprintf("%s-%s", line.Name, line.No))
+			if err != nil {
+				fmt.Println("copy to clipboard failed:", err)
+			} else {
+				fmt.Println("copy to clipboard success")
+			}
 		}
 	}
 	return found
