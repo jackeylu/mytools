@@ -15,7 +15,7 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-func ReadExcelFile(excelFile string, columnsSize int, f func([]string)) {
+func ReadExcelFile(excelFile string, columnsSize int, f func([]string), ignoreHeader bool) {
 	if !fileExists(excelFile) {
 		panic(fmt.Sprintf("file [%s] not found", excelFile))
 	}
@@ -31,7 +31,9 @@ func ReadExcelFile(excelFile string, columnsSize int, f func([]string)) {
 	if err != nil {
 		panic(fmt.Errorf("error getting rows from first sheet:%v", err))
 	}
-
+	if ignoreHeader {
+		rows = rows[1:]
+	}
 	for _, row := range rows {
 		f(row)
 	}

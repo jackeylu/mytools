@@ -107,7 +107,7 @@ func readNameList(excelFile string) []CourseStudent {
 			Name: line[0],
 			Sno:  line[1],
 		})
-	})
+	}, true)
 	return lines
 }
 
@@ -115,7 +115,7 @@ func traverseFiles(folderPath, labName string, students []CourseStudent, fileNam
 	illegalFileNames := make([]string, 0)
 	notFounds := make([]string, 0)
 	result := make([]string, len(students))
-	for i := 0; i < len(result); i++ {
+	for i := 1; i < len(result); i++ {
 		// Not submitted at default
 		result[i] = ""
 	}
