@@ -120,9 +120,9 @@ func findStudentByKeyInSlice(lines []Student, key string) bool {
 			fmt.Printf("student %s found with result: %v\n", line.Name, line)
 			err := clipboard.WriteAll(fmt.Sprintf("%s-%s", line.Name, line.No))
 			if err != nil {
-				fmt.Println("copy to clipboard failed:", err)
+				fmt.Println("failed to copy the tag to clipboard:", err)
 			} else {
-				fmt.Println("copy to clipboard success")
+				fmt.Println("The tag is copied to clipboard.")
 			}
 		}
 	}
