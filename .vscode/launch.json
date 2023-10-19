@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${file}",
-            "args": ["lab","-c", "php-2023-class-1", "-l","Lab1"]
+            "args": ["lab","-c", "php-2023-class-1", "-d", "D:\\BaiduSyncdisk\\work\\2023-PHP\\实验报告\\22信安1班", "-l","Lab1-PHP开发环境搭建,Lab2-PHP基础知识"]
         }
 
     ]
