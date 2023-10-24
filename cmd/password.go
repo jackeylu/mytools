@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
 )
 
@@ -44,12 +45,15 @@ var passwordCmd = &cobra.Command{
 	Short: "A password generator",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if specialCharacters < 0 || totalCharacters < 0 {
-			return errors.New("number of characters must be greate or equal than zero.")
+			return errors.New("number of characters must be greate or equal than zero")
 		}
 		if specialCharacters > totalCharacters {
-			return errors.New("number of special characters must be less or equal than total characters.")
+			return errors.New("number of special characters must be less or equal than total characters")
 		}
-		fmt.Println(generatePassword(specialCharacters, totalCharacters))
+		password := generatePassword(specialCharacters, totalCharacters)
+		clipboard.WriteAll(password)
+		fmt.Printf("Generated Password : %s\n", password)
+		fmt.Println("Password copied to clipboard")
 		return nil
 	},
 }
