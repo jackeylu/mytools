@@ -192,7 +192,12 @@ func processOneLab(labDir string,
 func extractFilename(fileName string, illegalFileNames [][]string, labIndex int) (name string,
 	sno string, experiment string, shouldReturn bool) {
 	name, sno, experiment, shouldReturn = "", "", "", false
-	fields := strings.Split(strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(fileName), "_", "-"), " ", "-"), "-")
+	// 1. trim space in the leading and trailing position
+	// 2. replace left space and '_' with '-'
+	fields := strings.Split(
+		strings.ReplaceAll(
+			strings.ReplaceAll(
+				strings.TrimSpace(fileName), "_", "-"), " ", "-"), "-")
 	if len(fields) < 3 {
 		illegalFileNames[labIndex] = append(illegalFileNames[labIndex], fileName)
 		shouldReturn = true
