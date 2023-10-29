@@ -23,11 +23,11 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/jackeylu/mytools/util"
 	"github.com/spf13/cobra"
@@ -72,7 +72,7 @@ The generated result includes the submmited flag for each student and those file
 		}
 		students := readNameList(excelFile)
 		// 文件名模式: `.*\.(doc|docx)` 表示匹配所有以 .doc 或 .docx 结尾的文件
-		fileNamePattern := `.*\.(doc|docx)`
+		fileNamePattern := `.*\.(doc|docx|zip|rar)`
 		traverseFiles(workingDir, labsName, students, fileNamePattern)
 	},
 }
@@ -99,7 +99,7 @@ func init() {
 
 // List all the sub-directories in the given path
 func listSubDirectories(path string) []string {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		panic(err)
 	}
@@ -116,8 +116,8 @@ func readNameList(excelFile string) []CourseStudent {
 	lines := make([]CourseStudent, 0)
 	util.ReadExcelFile(excelFile, 2, func(line []string) {
 		if len(line) != 2 {
-			panic(fmt.Errorf("error reading namelist fields:%v, expected 2 columns but not matched",
-				line))
+			panic(fmt.Errorf("error reading namelist fields:%v, expected 2 columns but got %d",
+				line, len(line)))
 		}
 		lines = append(lines, CourseStudent{
 			Name: line[0],
@@ -160,12 +160,10 @@ func processOneLab(labDir string,
 
 		fileName := filepath.Base(path)
 		if match, _ := regexp.MatchString(fileNamePattern, fileName); match {
-			fields := strings.Split(fileName, "-")
-			if len(fields) < 3 {
-				illegalFileNames[labIndex] = append(illegalFileNames[labIndex], fileName)
+			name, sno, experiment, shouldReturn := extractFilename(fileName, illegalFileNames, labIndex)
+			if shouldReturn {
 				return nil
 			}
-			name, sno, experiment := fields[0], fields[1], strings.Join(fields[2:], "-")
 			experiment = strings.Split(experiment, ".")[0]
 			if experiment != labName {
 				illegalFileNames[labIndex] = append(illegalFileNames[labIndex], fileName)
@@ -189,6 +187,30 @@ func processOneLab(labDir string,
 		return nil
 	})
 	return err
+}
+
+func extractFilename(fileName string, illegalFileNames [][]string, labIndex int) (name string,
+	sno string, experiment string, shouldReturn bool) {
+	name, sno, experiment, shouldReturn = "", "", "", false
+	fields := strings.Split(strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(fileName), "_", "-"), " ", "-"), "-")
+	if len(fields) < 3 {
+		illegalFileNames[labIndex] = append(illegalFileNames[labIndex], fileName)
+		shouldReturn = true
+		return
+	}
+	name, sno, experiment = fields[0], fields[1], strings.Join(fields[2:], "-")
+	isDigit := true
+	for _, r := range name {
+		if !unicode.IsDigit(r) {
+			continue
+		}
+		isDigit = false
+		break
+	}
+	if !isDigit {
+		name, sno = sno, name
+	}
+	return
 }
 
 func handleResult(found []int,
