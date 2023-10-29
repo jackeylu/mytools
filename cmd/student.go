@@ -24,6 +24,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/atotto/clipboard"
 	"github.com/jackeylu/mytools/util"
@@ -34,8 +35,10 @@ import (
 var (
 	// the filename of the excelFile
 	excelFile string
-	// finding by the key, may be the student's name or No.
-	key string
+	// finding by the keys, may be the student's name or No.
+	keys []string
+	// showing the found result with name first or NO. first?
+	reverse bool
 )
 
 type Student struct {
@@ -46,7 +49,7 @@ type Student struct {
 }
 
 func (s Student) String() string {
-	return fmt.Sprintf("Tag: %s-%s, Class: %s, Grade: %s", s.Name, s.No, s.Class, s.Grade)
+	return fmt.Sprintf("Name: %s, NO: %s, Class: %s, Grade: %s", s.Name, s.No, s.Class, s.Grade)
 }
 
 // studentCmd represents the student command
@@ -55,7 +58,7 @@ var studentCmd = &cobra.Command{
 	Short: "find the class name of given student with name or student no.",
 	Long:  `Find the class name of given student by given dataset.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		findStudent(excelFile, key)
+		findStudent(excelFile, keys)
 	},
 }
 
@@ -72,10 +75,11 @@ func init() {
 	// is called directly, e.g.:
 	// studentCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	studentCmd.Flags().StringVarP(&excelFile, "dataset", "d", "", "the dataset file")
-	studentCmd.Flags().StringVarP(&key, "key", "k", "", "the key of the student")
+	studentCmd.Flags().StringSliceVarP(&keys, "keys", "k", []string{}, "the key text of students")
+	studentCmd.Flags().BoolVarP(&reverse, "reverse", "r", false, "student no first or name first?")
 }
 
-func findStudent(excelFile, key string) {
+func findStudent(excelFile string, keys []string) {
 	// check if the dataset file exists
 	if excelFile == "" {
 		excelFile = viper.GetString("lab.all-student")
@@ -83,13 +87,14 @@ func findStudent(excelFile, key string) {
 	if excelFile == "" {
 		panic("dataset is empty")
 	}
-	if key == "" {
-		panic("key is empty")
+	if len(keys) == 0 {
+		panic("keys is empty")
 	}
-	findStudentByKey(excelFile, key)
+	fmt.Println(keys)
+	findStudentByKeys(excelFile, keys)
 }
 
-func findStudentByKey(excelFile, key string) {
+func findStudentByKeys(excelFile string, keys []string) {
 	fmt.Fprintln(os.Stderr, "Using namelist file:", excelFile)
 	// read the csvfile into slice of Student
 	lines := make([]Student, 0)
@@ -106,9 +111,8 @@ func findStudentByKey(excelFile, key string) {
 		})
 	}, true)
 	// find the student by key
-	if !findStudentByKeyInSlice(lines, key) {
-		fmt.Printf("Can not find any student with keyword: %s\n", key)
-		return
+	if !findStudentByKeyInSlice(lines, strings.TrimSpace(keys[len(keys)-1])) {
+		fmt.Printf("Can not find any student with keyword: %s\n", keys[len(keys)-1])
 	}
 }
 
@@ -118,11 +122,18 @@ func findStudentByKeyInSlice(lines []Student, key string) bool {
 		if line.No == key || line.Name == key {
 			found = true
 			fmt.Printf("student %s found with result: %v\n", line.Name, line)
-			err := clipboard.WriteAll(fmt.Sprintf("%s-%s", line.Name, line.No))
+			var err error
+			var tag string
+			if !reverse {
+				tag = fmt.Sprintf("%s-%s", line.Name, line.No)
+			} else {
+				tag = fmt.Sprintf("%s-%s", line.No, line.Name)
+			}
+			err = clipboard.WriteAll(tag)
 			if err != nil {
 				fmt.Println("failed to copy the tag to clipboard:", err)
 			} else {
-				fmt.Println("The tag is copied to clipboard.")
+				fmt.Printf("The tag %s is copied to clipboard.\n", tag)
 			}
 		}
 	}
