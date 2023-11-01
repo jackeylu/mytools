@@ -69,9 +69,7 @@ mytools email -u <username> -p <password> -H [host] -P [port] -s [startFetch] -e
 -l, --latestSize <latestSize>  拉取的最新邮件数量
 
 `,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("email called")
-
+	RunE: func(cmd *cobra.Command, args []string) error {
 		// 设置日志文件的格式
 		log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
 		// 创建一个 LoggerWriter 对象
@@ -80,13 +78,16 @@ mytools email -u <username> -p <password> -H [host] -P [port] -s [startFetch] -e
 		// 将日志同时输出到终端和日志文件
 		log.SetOutput(logger)
 
-		checkInput()
+		if err := checkInput(); err != nil {
+			return err
+		}
+
 		fetchAndSaveEmails()
-		fmt.Println("email end")
+		return nil
 	},
 }
 
-func checkInput() {
+func checkInput() error {
 	if imapUsername == "" {
 		imapUsername = viper.GetString("email.username")
 	}
@@ -94,7 +95,7 @@ func checkInput() {
 		imapPassword = viper.GetString("email.password")
 	}
 	if imapUsername == "" || imapPassword == "" {
-		log.Fatal("username or password is empty")
+		return fmt.Errorf("username or password is empty")
 	}
 	if imapHost == "" {
 		imapHost = viper.GetString("email.host")
@@ -103,8 +104,9 @@ func checkInput() {
 		imapPort = viper.GetInt("email.port")
 	}
 	if imapHost == "" || imapPort == 0 {
-		log.Fatal("host or port is empty")
+		return fmt.Errorf("host or port is empty")
 	}
+	return nil
 }
 
 func init() {
@@ -202,7 +204,7 @@ func fetchAndSaveEmails() {
 		for _, v := range result {
 			ans = append(ans, []string{v.Date.Format("2006-01-02T15:04:05 +080000"),
 				v.From, strings.Join(v.To, ","), v.Subject,
-				strings.Join(v.Attachments, ",")})
+				strings.Join(v.Attachments, "\r\n")})
 		}
 		return ans
 	})
