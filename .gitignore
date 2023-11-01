@@ -1,4 +1,7 @@
 *.exe
+*.xlsx
+*.xls
+.vscode/
 mytools
 
 Teacher/

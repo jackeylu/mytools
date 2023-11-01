@@ -1,6 +1,7 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -37,4 +38,41 @@ func ReadExcelFile(excelFile string, columnsSize int, f func([]string), ignoreHe
 	for _, row := range rows {
 		f(row)
 	}
+}
+
+func WriteExcelFileByFunction(excelFile string, columns []string, f func() [][]string) {
+	WriteExcelFile(excelFile, columns, f())
+}
+
+func WriteExcelFile(excelFile string, columns []string, data [][]string) error {
+	if len(data) == 0 {
+		fmt.Print("No data to handle.")
+		return nil
+	}
+	if len(columns) != len(data[0]) {
+		return errors.New("columns size not match data size")
+	}
+
+	file := excelize.NewFile()
+	defer file.Close()
+
+	// write header
+	cell, err := excelize.CoordinatesToCellName(1, 1)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	file.SetSheetRow("Sheet1", cell, &columns)
+
+	for idx, row := range data {
+		cell, err := excelize.CoordinatesToCellName(1, idx+2)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		file.SetSheetRow("Sheet1", cell, &row)
+	}
+
+	file.SaveAs(excelFile)
+	return nil
 }

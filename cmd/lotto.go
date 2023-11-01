@@ -16,7 +16,6 @@ limitations under the License.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"time"
@@ -34,8 +33,8 @@ var (
 		Short: "A lotto number generator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if start >= end || start < 0 {
-				return errors.New(fmt.Sprintf("start number must be less than end number and must be greater or equal then zero, but start = %d, end = %d",
-					start, end))
+				return fmt.Errorf("start number must be less than end number and must be greater or equal then zero, but start = %d, end = %d",
+					start, end)
 			}
 			if milliSecond < 0 {
 				fmt.Println("negativte value for milliSecond, use default value 100ms.")
