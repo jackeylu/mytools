@@ -8,7 +8,6 @@ import (
 
 // LoggerWriter 是一个实现了 io.Writer 接口的类型，它能够同时输出到终端和日志文件
 type LoggerWriter struct {
-	stdout   *log.Logger
 	logfile  *os.File
 	filename string
 }
@@ -21,7 +20,6 @@ func NewLoggerWriter(filename string) *LoggerWriter {
 	}
 
 	return &LoggerWriter{
-		stdout:   log.New(os.Stdout, "", 0),
 		logfile:  f,
 		filename: filename,
 	}
@@ -29,7 +27,7 @@ func NewLoggerWriter(filename string) *LoggerWriter {
 
 // Write 方法实现 io.Writer 接口，用于同时输出到终端和日志文件
 func (lw *LoggerWriter) Write(p []byte) (n int, err error) {
-	lw.stdout.Print(string(p))
+	fmt.Fprint(os.Stdout, string(p))
 	return lw.logfile.Write(p)
 }
 
