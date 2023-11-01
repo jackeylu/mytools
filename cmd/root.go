@@ -24,12 +24,24 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
+
+var (
+	// version is the version of the program
+	version = "0.0.1"
+	// buildTime is the time when the program is built
+	buildTime = time.Now().Format("2006-01-02 15:04:05")
+	// gitCommit is the git commit id of the program
+	gitCommit = getGitCommit()
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -38,12 +50,15 @@ var rootCmd = &cobra.Command{
 	Long:  `These tools are developed by myself for my personal requirements.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	// Run: func(cmd *cobra.Command, args []string)
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	rootCmd.Version = fmt.Sprintf(`Version:%s, build time: %s, git commit: %s.
+Developed by Lyu Lin <lvlin@whu.edu.cn>.`,
+		version, buildTime, gitCommit)
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -57,7 +72,8 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.mytools.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
+		"config file (default is $HOME/.mytools.yaml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -86,4 +102,15 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+func getGitCommit() string {
+	// full commit id
+	// out, err := exec.Command("git", "rev-parse", "--verify", "HEAD").Output()
+	// short commit id
+	out, err := exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+	if err != nil {
+		return "unknown"
+	}
+	return strings.Trim(string(out), "\n")
 }
