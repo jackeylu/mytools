@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/xuri/excelize/v2"
@@ -9,6 +10,7 @@ import (
 
 func TestWriteExcelFile(t *testing.T) {
 	excelFile := "test.xlsx"
+	defer os.Remove(excelFile)
 
 	// Test columns size not match data size
 	columns2 := []string{"Name", "Age"}
@@ -52,6 +54,7 @@ func TestWriteExcelFile(t *testing.T) {
 	if !checkContent(content, expectedContent) {
 		t.Errorf("Expected file content to be %v, but got %v", expectedContent, content)
 	}
+
 }
 
 func checkContent(content, expectedContent [][]string) bool {
