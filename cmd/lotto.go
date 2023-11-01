@@ -18,6 +18,7 @@ package cmd
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -75,6 +76,7 @@ func work() {
 	defer close(ch)
 	for {
 		num := rand.Int63n(end-start) + start
+		// fmt.Printf("[%d]\n", num)
 		fmt.Printf("%d", num)
 		// 休眠0.5秒钟
 		time.Sleep(time.Millisecond * time.Duration(milliSecond))
@@ -84,15 +86,23 @@ func work() {
 			fmt.Printf("You have choosed %d\n", num)
 			return
 		default:
-			fmt.Printf("\r ")
-			for num = num % 10; num > 0; num /= 10 {
-				fmt.Printf(" ")
-			}
-			fmt.Printf(" ")
-			fmt.Printf("\r")
+			fmt.Printf("\r%s\r", strings.Repeat(" ", getNumberLength(num)))
 		}
 	}
+}
 
+func getNumberLength(int64Num int64) int {
+	if int64Num == 0 {
+		return 1
+	}
+	if int64Num < 0 {
+		int64Num = -int64Num
+	}
+	var i int
+	for i = 0; int64Num > 0; i++ {
+		int64Num /= 10
+	}
+	return i
 }
 func init() {
 	rootCmd.AddCommand(lottoCmd)
