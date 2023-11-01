@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -33,40 +34,39 @@ var baseDir string
 // fileByDateCmd represents the fileByDate command
 var fileByDateCmd = &cobra.Command{
 	Use:   "fileByDate",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "将给定目录下的所有文件按修改日期进行分组，放到以日期命名的文件夹中.",
+	Long: `
+	将给定目录下的所有文件按修改日期进行分组，放到以日期命名的文件夹中.
+	
+使用方法：
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		manageFilesByDate()
+	mytools fileByDate -b <directory>
+说明：
+
+	-b  指定要扫描的文件夹路径，默认为./images
+示例：
+	mytools fileByDate -b ./images
+	将会将当前目录下的images文件夹下的所有文件按修改日期进行分组，放到以日期命名的文件夹中。	
+	`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		//step1：扫描baseDir目录下的所有文件
+		entries, err := os.ReadDir(baseDir)
+		if err != nil {
+			return err
+		}
+		// step2：按日期进行分组
+		manageFilesByDate(entries)
+		return nil
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(fileByDateCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// fileByDateCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// fileByDateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	fileByDateCmd.Flags().StringVarP(&baseDir, "baseDir", "b", "./images", "Base directory to search for files")
 }
 
-func manageFilesByDate() {
-	//step1：扫描baseDir目录下的所有文件
-	entries, err := os.ReadDir(baseDir)
-	if err != nil {
-		fmt.Println("read dir failed, err:", err)
-		return
-	}
+func manageFilesByDate(entries []fs.DirEntry) {
 	for i := 0; i < len(entries); i++ {
 		entry := entries[i]
 		if entry.IsDir() {
@@ -79,7 +79,7 @@ func manageFilesByDate() {
 		}
 		time := info.ModTime()
 		date := time.Format("2006-01-02")
-		fmt.Println(date)
+		fmt.Printf("mv %s/%s %s/%s\n", baseDir, entry.Name(), baseDir, date)
 		os.Mkdir(baseDir+"/"+date, 0777)
 		os.Rename(baseDir+"/"+entry.Name(), baseDir+"/"+date+"/"+entry.Name())
 	}

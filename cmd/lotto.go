@@ -30,7 +30,24 @@ var (
 	// lottoCmd represents the lotto command
 	lottoCmd = &cobra.Command{
 		Use:   "lotto",
-		Short: "A lotto number generator",
+		Short: "乐透小游戏",
+		Long: `
+本程序是一款简单的乐透小游戏，用户在命令行中输入起始数字和结束数字，以及休眠间隔，
+程序会在休眠间隔后随机生成一个整数，反复生成新的随机数，直到用户敲击Enter按键结束。
+
+
+示例:
+  mytools lotto -start 1 -end 100 -milliSecond 1000
+
+Flags:
+  -h, --help   help for lotto
+
+Args:
+  [start]     起始数字，必须大于0
+  [end]       结束数字，必须大于start
+  [milliSecond] 休眠时间，单位毫秒，默认100ms
+
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if start >= end || start < 0 {
 				return fmt.Errorf("start number must be less than end number and must be greater or equal then zero, but start = %d, end = %d",
@@ -80,14 +97,6 @@ func work() {
 func init() {
 	rootCmd.AddCommand(lottoCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// lottoCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
 	lottoCmd.Flags().Int64VarP(&start, "start", "s", 1, "The starting number.")
 	lottoCmd.Flags().Int64VarP(&end, "end", "e", 100, "The ending number.")
 	lottoCmd.Flags().Int64VarP(&milliSecond, "ms", "m", 100, "The sleeping interval.")

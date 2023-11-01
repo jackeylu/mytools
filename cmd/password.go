@@ -42,7 +42,21 @@ var (
 // passwordCmd represents the password command
 var passwordCmd = &cobra.Command{
 	Use:   "password",
-	Short: "A password generator",
+	Short: "密码生成器",
+	Long: `密码生成器，生成随机密码，并将密码复制到剪切板。
+
+用法：
+	mytools password
+
+参数：
+	-s, --special 特殊字符个数，默认值为2
+	-t, --total 总字符个数，默认值为10
+
+示例：
+	$ mytools password -s 3 -t 8
+	Generated Password : B8<]mG5.
+	Password copied to clipboard
+	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if specialCharacters < 0 || totalCharacters < 0 {
 			return errors.New("number of characters must be greate or equal than zero")
@@ -81,15 +95,6 @@ func generatePassword(specialCharacters, totalCharacters int8) string {
 func init() {
 	rootCmd.AddCommand(passwordCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// passwordCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// passwordCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	passwordCmd.Flags().Int8VarP(&specialCharacters, "special", "s", 2, "The number of special characters")
 	passwordCmd.Flags().Int8VarP(&totalCharacters, "total", "t", 10, "The total number of characters")
 }

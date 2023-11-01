@@ -55,8 +55,8 @@ func (s Student) String() string {
 // studentCmd represents the student command
 var studentCmd = &cobra.Command{
 	Use:   "student",
-	Short: "find the class name of given student with name or student no.",
-	Long:  `Find the class name of given student by given dataset.`,
+	Short: "根据学生的完整姓名或学号进行查询.",
+	Long:  `在指定的excel文件中查找学生信息，如果找到将会输出学生信息，包括姓名、学号、班级、年级.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		findStudent(excelFile, keys)
 	},
@@ -65,15 +65,6 @@ var studentCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(studentCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// studentCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// studentCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	studentCmd.Flags().StringVarP(&excelFile, "dataset", "d", "", "the dataset file")
 	studentCmd.Flags().StringSliceVarP(&keys, "keys", "k", []string{}, "the key text of students")
 	studentCmd.Flags().BoolVarP(&reverse, "reverse", "r", false, "student no first or name first?")

@@ -49,9 +49,8 @@ type CourseStudent struct {
 
 // labCmd represents the lab command
 var labCmd = &cobra.Command{
-	Use: "lab",
-	Short: `Check the submitted reports of one lab in a given directory, 
-              return the submitted flags and unknown submmitters.`,
+	Use:   "lab",
+	Short: `将一个或多个实验报告文件夹进行统计，汇总每次实验的提交情况.`,
 	Long: `This program will check a given directory with given namelist, and generated the checked result. For example:
 
 The namelist is a csv type file with 'name' and 'no' columns.

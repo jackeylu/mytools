@@ -38,7 +38,12 @@ var (
 // web2binCmd represents the web2bin command
 var web2binCmd = &cobra.Command{
 	Use:   "web2bin",
-	Short: "Covert the web content in base64 format to binary",
+	Short: "将base64编码的文件内容解码成一个二进制文件",
+	Long: `将base64编码的文件内容解码成一个二进制文件
+
+示例:
+web2bin -f base64.txt -o out.bin
+`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// read file content
 		bytes, err := os.ReadFile(filename)
@@ -63,15 +68,6 @@ var web2binCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(web2binCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// web2binCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// web2binCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	web2binCmd.Flags().StringVarP(&filename, "filename", "f", "base64.txt", "Filename to convert")
 	web2binCmd.Flags().StringVarP(&output, "output", "o", "out.bin", "Output filename")
 }
