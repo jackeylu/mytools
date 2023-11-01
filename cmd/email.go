@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"strings"
 	"time"
 
@@ -50,18 +51,37 @@ var (
 // emailCmd represents the email command
 var emailCmd = &cobra.Command{
 	Use:   "email",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "从邮箱拉取一批邮件的基础信息和附件名称，并存储在email.xlsx中.",
+	Long: `该程序用来从指定的邮箱中拉取一批邮件的基础信息和附件名称. 拉取的信息将会存储在当前目录的email.xlsx文件中.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+使用方法:
+
+mytools email -u <username> -p <password> -H [host] -P [port] -s [startFetch] -e [endFetch] -l [latestSize]
+
+参数说明:
+
+-u, --username <username>  邮箱用户名
+-p, --password <password>  邮箱密码
+-H, --host <host>          邮箱主机地址: 默认是 imap.qq.com
+-P, --port <port>          邮箱端口号: 默认是 993
+-s, --startFetch <startFetch>  起始邮件序号
+-e, --endFetch <endFetch>    结束邮件序号
+-l, --latestSize <latestSize>  拉取的最新邮件数量
+
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("email called")
 
+		// 设置日志文件的格式
+		log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
+		// 创建一个 LoggerWriter 对象
+		logger := util.NewLoggerWriter("logfile.txt")
+		defer logger.Close()
+		// 将日志同时输出到终端和日志文件
+		log.SetOutput(logger)
+
 		checkInput()
-		main()
+		fetchAndSaveEmails()
 		fmt.Println("email end")
 	},
 }
@@ -89,16 +109,6 @@ func checkInput() {
 
 func init() {
 	rootCmd.AddCommand(emailCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// emailCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// emailCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	emailCmd.Flags().StringVarP(&imapUsername, "username", "u", "", "imap username")
 	emailCmd.Flags().StringVarP(&imapPassword, "password", "p", "", "imap password")
 	emailCmd.Flags().StringVarP(&imapHost, "host", "H", "imap.qq.com", "imap host")
@@ -108,7 +118,7 @@ func init() {
 	emailCmd.Flags().Uint32VarP(&latestSize, "latest", "l", 50, "latest N email to retreive")
 }
 
-func main() {
+func fetchAndSaveEmails() {
 	// Connect to the IMAP server
 	c, err := client.DialTLS(fmt.Sprintf("%s:%d", imapHost, imapPort), nil)
 	if err != nil {
@@ -153,7 +163,7 @@ func main() {
 		endFetch = mbox.Messages
 	}
 	if latestSize != 0 {
-		startFetch = mbox.Messages - latestSize
+		startFetch = uint32(math.Max(0, float64(mbox.Messages-latestSize-1)))
 	}
 	imap.CharsetReader = charset.Reader
 	seqSet := new(imap.SeqSet)
@@ -190,7 +200,7 @@ func main() {
 	util.WriteExcelFileByFunction("email.xlsx", []string{"Date", "From", "To", "Subject", "Attachments"}, func() [][]string {
 		var ans [][]string
 		for _, v := range result {
-			ans = append(ans, []string{v.Date.Format("2006-01-02 15:04:05"),
+			ans = append(ans, []string{v.Date.Format("2006-01-02T15:04:05 +080000"),
 				v.From, strings.Join(v.To, ","), v.Subject,
 				strings.Join(v.Attachments, ",")})
 		}
