@@ -59,6 +59,8 @@ func WriteExcelFile(excelFile string, columns []string, data [][]string) error {
 	file := excelize.NewFile()
 	defer file.Close()
 
+	// TODO 追加到excel文件后面
+	// TODO seqNum写到邮件里面
 	// write header
 	cell, err := excelize.CoordinatesToCellName(1, 1)
 	if err != nil {

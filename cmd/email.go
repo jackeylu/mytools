@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -41,7 +41,7 @@ import (
 // ExcelFileHeader returns the excel file headers
 // "Date", "From", "To", "Subject", "Attachments"
 func ExcelFileHeader() []string {
-	return []string{"Date", "From", "To", "Subject", "Attachments"}
+	return []string{"SeqNum", "Date", "From", "To", "Subject", "Attachments"}
 }
 
 var (
@@ -51,7 +51,7 @@ var (
 	imapPort     int
 	startFetch   uint32
 	endFetch     uint32
-	latestSize   uint32
+	size         uint32
 )
 
 // emailCmd represents the email command
@@ -122,8 +122,7 @@ func init() {
 	emailCmd.Flags().StringVarP(&imapHost, "host", "H", "imap.qq.com", "imap host")
 	emailCmd.Flags().IntVarP(&imapPort, "port", "P", 993, "imap port")
 	emailCmd.Flags().Uint32VarP(&startFetch, "start", "s", 0, "start")
-	emailCmd.Flags().Uint32VarP(&endFetch, "end", "e", 0, "end")
-	emailCmd.Flags().Uint32VarP(&latestSize, "latest", "l", 50, "latest N email to retreive")
+	emailCmd.Flags().Uint32VarP(&size, "size", "S", 50, "N email to retreive from the start position")
 }
 
 func fetchAndSaveEmails() {
@@ -167,15 +166,29 @@ func fetchAndSaveEmails() {
 	} else {
 		log.Println("Messages:", mbox.Messages)
 	}
-	if endFetch == 0 {
+	if size > 50 {
+		size = 50
+		log.Println("Size is too large, set to 50")
+	}
+	if startFetch == 0 {
 		endFetch = mbox.Messages
+		startFetch = mbox.Messages - size - 1
+	} else {
+		if startFetch > mbox.Messages {
+			startFetch = mbox.Messages - 1
+			endFetch = mbox.Messages
+			log.Println("StartFetch is too large, set to the last message")
+		}
+		endFetch = startFetch + size - 1
+		if endFetch > mbox.Messages {
+			endFetch = mbox.Messages
+		}
 	}
-	if latestSize != 0 {
-		startFetch = uint32(math.Max(0, float64(mbox.Messages-latestSize-1)))
-	}
+
 	imap.CharsetReader = charset.Reader
 	seqSet := new(imap.SeqSet)
 	seqSet.AddRange(startFetch, endFetch)
+	log.Printf("Fetch messages from %d to %d\n", startFetch, endFetch)
 
 	// Get the whole message body
 	section := &imap.BodySectionName{}
@@ -192,13 +205,17 @@ func fetchAndSaveEmails() {
 	var count int = 1
 	result := make([]EmailInfo, 0)
 	for m := range messages {
-		log.Printf("Message %d\n", count)
+		log.Printf("Message %d\n", m.SeqNum)
 		info := handleOneMessage(m, section)
 		if info.Date.IsZero() {
-			log.Fatal("Date is zero")
+			log.Fatal("Date is zero, Closed by remote server?", info)
 		}
 		result = append(result, info)
 		count++
+		if count%20 == 0 {
+			log.Println("20 emails fetched, and sleep for a while")
+			time.Sleep(time.Second * time.Duration(rand.Intn(3)+1))
+		}
 	}
 
 	if err := c.Logout(); err != nil {
@@ -208,8 +225,12 @@ func fetchAndSaveEmails() {
 	util.WriteExcelFileByFunction("email.xlsx", ExcelFileHeader(), func() [][]string {
 		var ans [][]string
 		for _, v := range result {
-			ans = append(ans, []string{EncodeTime(v.Date),
-				v.From, strings.Join(v.To, ","), v.Subject,
+			ans = append(ans, []string{
+				fmt.Sprintf("%d", v.SeqNum),
+				EncodeTime(v.Date),
+				v.From,
+				strings.Join(v.To, ","),
+				v.Subject,
 				EncodeAttachments(v.Attachments)})
 		}
 		return ans
@@ -218,6 +239,8 @@ func fetchAndSaveEmails() {
 
 // EmailInfo 邮件信息
 type EmailInfo struct {
+	// SeqNum 是邮件序号
+	SeqNum uint32
 	// Date 是邮件发送的时间
 	Date time.Time
 	// From 是邮件发送者的邮箱地址
@@ -257,6 +280,7 @@ func handleOneMessage(msg *imap.Message, section *imap.BodySectionName) (info Em
 		log.Fatal("Server didn't returned message")
 	}
 
+	info.SeqNum = msg.SeqNum
 	r := msg.GetBody(section)
 	if r == nil {
 		log.Fatal("Server didn't returned message body")

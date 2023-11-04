@@ -193,7 +193,7 @@ func updateEmailResultWithCourseInfo(emails []EmailInfo, labsMap map[string]Cour
 func findAndBuildResults(email EmailInfo, labsMap map[string]Course) []emailResult {
 	name, id, labs, err := extractStudentNameAndIDAndLabs(email.Subject, email.Attachments, labsMap)
 	if err != nil {
-		log.Printf("Failed to find student name and ID from email %s: %v\n", email, err)
+		log.Printf("Failed to find student name and ID from email %v: %v\n", email, err)
 		return []emailResult{
 			{
 				Time:       email.Date.Format("2006-01-02 15:04:05"),
