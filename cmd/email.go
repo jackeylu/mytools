@@ -172,7 +172,7 @@ func fetchAndSaveEmails() {
 	seqSet.AddRange(startFetch, endFetch)
 
 	// Get the whole message body
-	var section imap.BodySectionName
+	section := &imap.BodySectionName{}
 	items := []imap.FetchItem{section.FetchItem()}
 
 	messages := make(chan *imap.Message, 10)
@@ -218,12 +218,12 @@ type emailInfo struct {
 	Attachments []string
 }
 
-func handleOneMessage(msg *imap.Message, section imap.BodySectionName) (info emailInfo) {
+func handleOneMessage(msg *imap.Message, section *imap.BodySectionName) (info emailInfo) {
 	if msg == nil {
 		log.Fatal("Server didn't returned message")
 	}
 
-	r := msg.GetBody(&section)
+	r := msg.GetBody(section)
 	if r == nil {
 		log.Fatal("Server didn't returned message body")
 	}
