@@ -16,13 +16,13 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-func ReadExcelFile(excelFile string, columnsSize int, f func([]string), ignoreHeader bool) {
+func ReadExcelFile(excelFile string, f func(int, []string) error, ignoreHeader bool) error {
 	if !fileExists(excelFile) {
 		panic(fmt.Sprintf("file [%s] not found", excelFile))
 	}
 	file, err := excelize.OpenFile(excelFile)
 	if err != nil {
-		panic(fmt.Errorf("error opening namelist file:%v", err))
+		return fmt.Errorf("error opening namelist file:%v", err)
 	}
 
 	defer file.Close()
@@ -30,14 +30,17 @@ func ReadExcelFile(excelFile string, columnsSize int, f func([]string), ignoreHe
 	// 获取第一张表
 	rows, err := file.GetRows(file.GetSheetName(0))
 	if err != nil {
-		panic(fmt.Errorf("error getting rows from first sheet:%v", err))
+		return fmt.Errorf("error getting rows from first sheet:%v", err)
 	}
 	if ignoreHeader {
 		rows = rows[1:]
 	}
-	for _, row := range rows {
-		f(row)
+	for i, row := range rows {
+		if err = f(i, row); err != nil {
+			return fmt.Errorf("error on handle %d row [%v] with %v", i, row, err)
+		}
 	}
+	return nil
 }
 
 func WriteExcelFileByFunction(excelFile string, columns []string, f func() [][]string) {

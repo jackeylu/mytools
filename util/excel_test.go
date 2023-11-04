@@ -41,8 +41,9 @@ func TestWriteExcelFile(t *testing.T) {
 
 	// Test file content
 	content := [][]string{}
-	ReadExcelFile(excelFile, len(columns), func(s []string) {
+	ReadExcelFile(excelFile, func(_ int, s []string) error {
 		content = append(content, s)
+		return nil
 	}, false)
 
 	expectedContent := [][]string{

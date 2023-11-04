@@ -27,7 +27,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"unicode"
 
 	"github.com/jackeylu/mytools/util"
 	"github.com/spf13/cobra"
@@ -69,7 +68,7 @@ The generated result includes the submmited flag for each student and those file
 		if debug {
 			fmt.Fprintln(os.Stderr, "workingDir:", workingDir, "labName:", labsName, "csvfile:", excelFile)
 		}
-		students := readNameList(excelFile)
+		students := ReadNameList(excelFile)
 		// 文件名模式: `.*\.(doc|docx)` 表示匹配所有以 .doc 或 .docx 结尾的文件
 		fileNamePattern := `.*\.(doc|docx|zip|rar)`
 		traverseFiles(workingDir, labsName, students, fileNamePattern)
@@ -111,9 +110,9 @@ func listSubDirectories(path string) []string {
 	return subDirs
 }
 
-func readNameList(excelFile string) []CourseStudent {
+func ReadNameList(excelFile string) []CourseStudent {
 	lines := make([]CourseStudent, 0)
-	util.ReadExcelFile(excelFile, 2, func(line []string) {
+	util.ReadExcelFile(excelFile, func(_ int, line []string) error {
 		if len(line) != 2 {
 			panic(fmt.Errorf("error reading namelist fields:%v, expected 2 columns but got %d",
 				line, len(line)))
@@ -122,6 +121,7 @@ func readNameList(excelFile string) []CourseStudent {
 			Name: line[0],
 			Sno:  line[1],
 		})
+		return nil
 	}, true)
 	return lines
 }
@@ -159,7 +159,7 @@ func processOneLab(labDir string,
 
 		fileName := filepath.Base(path)
 		if match, _ := regexp.MatchString(fileNamePattern, fileName); match {
-			name, sno, experiment, shouldReturn := extractFilename(fileName, illegalFileNames, labIndex)
+			name, sno, experiment, shouldReturn := extractFilenameOrMarkIllegals(fileName, illegalFileNames, labIndex)
 			if shouldReturn {
 				return nil
 			}
@@ -188,32 +188,39 @@ func processOneLab(labDir string,
 	return err
 }
 
-func extractFilename(fileName string, illegalFileNames [][]string, labIndex int) (name string,
-	sno string, experiment string, shouldReturn bool) {
-	name, sno, experiment, shouldReturn = "", "", "", false
-	// 1. trim space in the leading and trailing position
-	// 2. replace left space and '_' with '-'
+func ExtractLabInfoFromFileName(fileName string) (name string, sno string, experiment string, err error) {
+	name, sno, experiment = "", "", ""
+	// 3. split the filename by '-'
 	fields := strings.Split(
 		strings.ReplaceAll(
+			// 2. replace space with '-'
 			strings.ReplaceAll(
-				strings.TrimSpace(fileName), "_", "-"), " ", "-"), "-")
+				// 1. replace leading and trailing space and '_' with '-'
+				strings.TrimSpace(fileName), "_", "-"),
+			" ", "-"),
+		"-")
 	if len(fields) < 3 {
+		err = fmt.Errorf("illegal filename format: %s", fileName)
+		return
+	}
+	name, sno, experiment = fields[0], fields[1], strings.Join(fields[2:], "-")
+
+	if !util.IsAllCharacterDigit(sno) {
+		name, sno = sno, name
+	}
+	return
+}
+
+func extractFilenameOrMarkIllegals(fileName string, illegalFileNames [][]string, labIndex int) (name string,
+	sno string, experiment string, shouldReturn bool) {
+	shouldReturn = false
+	name, sno, experiment, err := ExtractLabInfoFromFileName(fileName)
+	if err != nil {
 		illegalFileNames[labIndex] = append(illegalFileNames[labIndex], fileName)
 		shouldReturn = true
 		return
 	}
-	name, sno, experiment = fields[0], fields[1], strings.Join(fields[2:], "-")
-	isDigit := true
-	for _, r := range name {
-		if !unicode.IsDigit(r) {
-			continue
-		}
-		isDigit = false
-		break
-	}
-	if !isDigit {
-		name, sno = sno, name
-	}
+
 	return
 }
 

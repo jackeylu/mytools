@@ -38,6 +38,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+// ExcelFileHeader returns the excel file headers
+// "Date", "From", "To", "Subject", "Attachments"
+func ExcelFileHeader() []string {
+	return []string{"Date", "From", "To", "Subject", "Attachments"}
+}
+
 var (
 	imapUsername string
 	imapPassword string
@@ -184,7 +190,7 @@ func fetchAndSaveEmails() {
 
 	// msg := <-messages
 	var count int = 1
-	result := make([]emailInfo, 0)
+	result := make([]EmailInfo, 0)
 	for m := range messages {
 		log.Printf("Message %d\n", count)
 		info := handleOneMessage(m, section)
@@ -199,26 +205,54 @@ func fetchAndSaveEmails() {
 		log.Fatal(err)
 	}
 
-	util.WriteExcelFileByFunction("email.xlsx", []string{"Date", "From", "To", "Subject", "Attachments"}, func() [][]string {
+	util.WriteExcelFileByFunction("email.xlsx", ExcelFileHeader(), func() [][]string {
 		var ans [][]string
 		for _, v := range result {
-			ans = append(ans, []string{v.Date.Format("2006-01-02T15:04:05 +080000"),
+			ans = append(ans, []string{EncodeTime(v.Date),
 				v.From, strings.Join(v.To, ","), v.Subject,
-				strings.Join(v.Attachments, "\r\n")})
+				EncodeAttachments(v.Attachments)})
 		}
 		return ans
 	})
 }
 
-type emailInfo struct {
-	Date        time.Time
-	From        string
-	To          []string
-	Subject     string
+// EmailInfo 邮件信息
+type EmailInfo struct {
+	// Date 是邮件发送的时间
+	Date time.Time
+	// From 是邮件发送者的邮箱地址
+	From string
+	// To 是邮件接收者的邮箱地址
+	To []string
+	// Subject 是邮件标题
+	Subject string
+	// Attachments 是邮件附件名称
 	Attachments []string
 }
 
-func handleOneMessage(msg *imap.Message, section *imap.BodySectionName) (info emailInfo) {
+// EncodeAttachments 编码附件名称
+func EncodeAttachments(attachments []string) string {
+	return strings.Join(attachments, "\r\n")
+}
+
+// DecodeAttachments 解码附件名称
+func DecodeAttachments(attachments string) []string {
+	return strings.Split(attachments, "\r\n")
+}
+
+func EncodeTime(t time.Time) string {
+	return t.Format("2006-01-02T15:04:05 +080000")
+}
+
+func DecodeTime(s string) time.Time {
+	r, err := time.Parse("2006-01-02T15:04:05 +080000", s)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return r
+}
+
+func handleOneMessage(msg *imap.Message, section *imap.BodySectionName) (info EmailInfo) {
 	if msg == nil {
 		log.Fatal("Server didn't returned message")
 	}

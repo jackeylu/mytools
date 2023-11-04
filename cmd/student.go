@@ -89,7 +89,7 @@ func findStudentByKeys(excelFile string, keys []string) {
 	fmt.Fprintln(os.Stderr, "Using namelist file:", excelFile)
 	// read the csvfile into slice of Student
 	lines := make([]Student, 0)
-	util.ReadExcelFile(excelFile, 4, func(line []string) {
+	util.ReadExcelFile(excelFile, func(_ int, line []string) error {
 		if len(line) != 4 {
 			panic(fmt.Errorf("error reading namelist fields:%v, expected four columns but not matched",
 				line))
@@ -100,6 +100,7 @@ func findStudentByKeys(excelFile string, keys []string) {
 			Class: line[2],
 			Grade: line[3],
 		})
+		return nil
 	}, true)
 	// find the student by key
 	if !findStudentByKeyInSlice(lines, strings.TrimSpace(keys[len(keys)-1])) {
