@@ -49,16 +49,16 @@ func AppendExcelFileByFunction(excelFile string, columns []string, f func() [][]
 }
 
 // WriteExcelFile 覆盖写数据到excel文件中
-func WriteExcelFile(excelFile string, columns []string, data [][]string) error {
-	return WriteOrAppendExcelFile(excelFile, columns, data, false)
+func WriteExcelFile(excelFile string, headers []string, rows [][]string) error {
+	return WriteOrAppendExcelFile(excelFile, headers, rows, false)
 }
 
-func WriteOrAppendExcelFile(excelFile string, columns []string, data [][]string, append bool) error {
-	if len(data) == 0 {
+func WriteOrAppendExcelFile(excelFile string, headers []string, rows [][]string, append bool) error {
+	if len(rows) == 0 {
 		fmt.Print("No data to handle.")
 		return nil
 	}
-	if len(columns) != len(data[0]) {
+	if len(headers) != len(rows[0]) {
 		return errors.New("columns size not match data size")
 	}
 
@@ -85,9 +85,10 @@ func WriteOrAppendExcelFile(excelFile string, columns []string, data [][]string,
 			fmt.Println(err)
 			return err
 		}
-		file.SetSheetRow("Sheet1", cell, &columns)
+		file.SetSheetRow("Sheet1", cell, &headers)
+		rowNum += 1
 	}
-	for idx, row := range data {
+	for idx, row := range rows {
 		cell, err := excelize.CoordinatesToCellName(1, rowNum+idx+2)
 		if err != nil {
 			fmt.Println(err)
