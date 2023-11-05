@@ -23,131 +23,72 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
+	"log"
 
+	"github.com/jackeylu/mytools/util"
 	"github.com/spf13/cobra"
 )
 
-var (
-	// the working directory
-	dir string
-	// the extension of the filename
-	ext string
-	// the confirmed flag when renaming
-	confirmed bool
-)
+var savedExcelFile string
 
 // rmdupCmd represents the rmdup command
 var rmdupCmd = &cobra.Command{
 	Use:   "rmdup",
-	Short: "Remove duplication text of filename",
-	Long:  `将指定文件夹中特定文件类型的文件名进行整理，剔除重复的内容.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		rmdup()
+	Short: "清除下载的邮件信息中的重复数据",
+	Long:  `清除下载的邮件信息中的重复数据，并按日期排序.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if emailFile == "" {
+			return fmt.Errorf("请指定邮件文件")
+		}
+		if savedExcelFile == "" {
+			return fmt.Errorf("请指定保存excel文件的文件名")
+		}
+		// 设置日志文件的格式
+		log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
+		// 创建一个 LoggerWriter 对象
+		logger := util.NewLoggerWriter("logfile.txt")
+		defer logger.Close()
+		// 将日志同时输出到终端和日志文件
+		log.SetOutput(logger)
+
+		var emails []EmailInfo
+		if err := readAttachmentEmailFromFetchedEmailFile(emailFile, &emails); err != nil {
+			log.Println(err)
+			return err
+		}
+		emails = rmdup(emails)
+
+		// save the emails into file
+		if err := util.WriteExcelFile(savedExcelFile, ExcelFileHeader(), emailContent(emails)); err != nil {
+			log.Println(err)
+			return err
+		}
+		log.Printf("saved in %s", savedExcelFile)
+		return nil
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(rmdupCmd)
+	emailCmd.AddCommand(rmdupCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// rmdupCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// rmdupCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	rmdupCmd.Flags().StringVarP(&dir, "dir", "d", "./", "the directory to clean")
-	rmdupCmd.Flags().StringVarP(&ext, "ext", "e", "",
-		`the extension of the filename, like .zip , default is none for every file, 
-		otherwise only for file with specificated extension.`)
-	rmdupCmd.Flags().BoolVarP(&confirmed, "confirmed", "c", false, "confirm when renaming")
+	rmdupCmd.Flags().StringVarP(&emailFile, "file", "f", "", "the fetched email file by email command")
+	rmdupCmd.Flags().StringVarP(&savedExcelFile, "ouput", "o", "", "the file to store the cleared result")
 }
 
-func _clean(filename string) string {
-	var ans string
-	ans = filename
-	fileExt1 := filepath.Ext(filename)
-	if fileExt1 == "" {
-		return ans
+func rmdup(emails []EmailInfo) []EmailInfo {
+	var ans []EmailInfo
+	in := func(email EmailInfo) bool {
+		for j := 0; j < len(ans); j++ {
+			if ans[j].Equals(email) {
+				return true
+			}
+		}
+		return false
 	}
-	filename = filename[0 : len(filename)-len(fileExt1)]
-	fileExt2 := filepath.Ext(filename)
-	if fileExt2 != "" && fileExt1 == fileExt2 {
-		ans = filename
+	for i := 0; i < len(emails); i++ {
+		if !in(emails[i]) {
+			ans = append(ans, emails[i])
+		}
 	}
 	return ans
-}
-
-func cleanName(filename string) string {
-	fn := _clean(filename)
-	for fn != filename {
-		filename = fn
-		fn = _clean(filename)
-	}
-	return fn
-}
-
-func rmdup() {
-	//step1：list all files in the directory
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// step2: check each file
-	for _, file := range files {
-		// check if the file is a directory
-		if file.IsDir() {
-			continue
-		}
-		filename := file.Name()
-		// get the extension of the filename
-		fileExt := filepath.Ext(filename)
-		if ext != "" && fileExt != "" && fileExt != ext {
-			// 不匹配的文件类型不做处理
-			continue
-		}
-		cleanedName := cleanName(filename)
-		if cleanedName != "" && cleanedName != filename {
-			// 重命名filename为cleanedName
-			from, to := filepath.Join(dir, filename), filepath.Join(dir, cleanedName)
-			if !confirmed {
-				if ignore(from, to) {
-					continue
-				}
-			}
-
-			err := os.Rename(from, to)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			fmt.Printf("renamed %s to %s\n", filename, cleanedName)
-		}
-	}
-
-}
-
-func ignore(from, to string) bool {
-	for {
-		// 获取终端输入的字符，如果是 Y 则进入下一步，
-		// 否则提示重新输入并且继续监听终端输入
-		var input string
-		fmt.Printf("Renaming  %s to %s [Y/n]:", from, to)
-		fmt.Scanf("%s", &input)
-		input = strings.ToLower(input)
-		if input == "y" {
-			return true
-		} else if input == "n" {
-			return false
-		} else {
-			fmt.Println("Please input Y or N")
-		}
-	}
 }

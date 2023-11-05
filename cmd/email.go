@@ -26,6 +26,7 @@ import (
 	"io"
 	"log"
 	"math/rand"
+	"reflect"
 	"strings"
 	"time"
 
@@ -39,7 +40,7 @@ import (
 )
 
 // ExcelFileHeader returns the excel file headers
-// "Date", "From", "To", "Subject", "Attachments"
+// "SeqNum", "Date", "From", "To", "Subject", "Attachments"
 func ExcelFileHeader() []string {
 	return []string{"SeqNum", "Date", "From", "To", "Subject", "Attachments"}
 }
@@ -222,19 +223,21 @@ func fetchAndSaveEmails() {
 		log.Fatal(err)
 	}
 
-	util.AppendExcelFileByFunction("email.xlsx", ExcelFileHeader(), func() [][]string {
-		var ans [][]string
-		for _, v := range result {
-			ans = append(ans, []string{
-				fmt.Sprintf("%d", v.SeqNum),
-				EncodeTime(v.Date),
-				v.From,
-				strings.Join(v.To, ","),
-				v.Subject,
-				EncodeAttachments(v.Attachments)})
-		}
-		return ans
-	})
+	util.WriteOrAppendExcelFile("email.xlsx", ExcelFileHeader(), emailContent(result), true)
+}
+
+func emailContent(emails []EmailInfo) [][]string {
+	var ans [][]string
+	for _, v := range emails {
+		ans = append(ans, []string{
+			fmt.Sprintf("%d", v.SeqNum),
+			EncodeTime(v.Date),
+			v.From,
+			strings.Join(v.To, ","),
+			v.Subject,
+			EncodeAttachments(v.Attachments)})
+	}
+	return ans
 }
 
 // EmailInfo 邮件信息
@@ -251,6 +254,20 @@ type EmailInfo struct {
 	Subject string
 	// Attachments 是邮件附件名称
 	Attachments []string
+}
+
+func (i EmailInfo) String() string {
+	return fmt.Sprintf("SeqNum: %d, Date: %s, From: %s, To: %s, Subject: %s, Attachments: %s",
+		i.SeqNum, EncodeTime(i.Date), i.From, strings.Join(i.To, ","), i.Subject, EncodeAttachments(i.Attachments))
+}
+
+func (i EmailInfo) Equals(other EmailInfo) bool {
+	// i.SeqNum == other.SeqNum &&
+	return i.Date.Equal(other.Date) &&
+		i.From == other.From &&
+		i.Subject == other.Subject &&
+		reflect.DeepEqual(i.To, other.To) &&
+		reflect.DeepEqual(i.Attachments, other.Attachments)
 }
 
 // EncodeAttachments 编码附件名称

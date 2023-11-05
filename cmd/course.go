@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/jackeylu/mytools/util"
@@ -95,7 +96,7 @@ to quickly create a Cobra application.`,
 		log.SetOutput(logger)
 
 		var emails []EmailInfo
-		if err := readFetchedEmailFile(emailFile, &emails); err != nil {
+		if err := readAttachmentEmailFromFetchedEmailFile(emailFile, &emails); err != nil {
 			log.Println(err)
 			return err
 		}
@@ -130,8 +131,8 @@ func saveResult(result []emailResult) {
 	util.WriteExcelFile("email_course.xlsx", header, columns)
 }
 
-// readFetchedEmailFile reads the fetched email file, and build the preliminary result
-func readFetchedEmailFile(emailFile string, emails *[]EmailInfo) error {
+// readAttachmentEmailFromFetchedEmailFile reads the fetched email file, and build the preliminary result
+func readAttachmentEmailFromFetchedEmailFile(emailFile string, emails *[]EmailInfo) error {
 	util.ReadExcelFile(emailFile, func(row int, columns []string) error {
 		if row == 0 {
 			if reflect.DeepEqual(columns, ExcelFileHeader()) {
@@ -145,10 +146,16 @@ func readFetchedEmailFile(emailFile string, emails *[]EmailInfo) error {
 			return nil
 		}
 		date := DecodeTime(columns[1])
+		num, err := strconv.ParseUint(columns[0], 10, 32)
+		if err != nil {
+			return err
+		}
 		// handle the contents
 		*emails = append(*emails, EmailInfo{
+			SeqNum:      uint32(num),
 			Date:        date,
 			From:        columns[2],
+			To:          strings.Split(columns[3], ","),
 			Subject:     columns[4],
 			Attachments: DecodeAttachments(columns[5]),
 		})
