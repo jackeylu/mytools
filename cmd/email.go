@@ -207,9 +207,9 @@ func fetchAndSaveEmails() {
 	for m := range messages {
 		log.Printf("Message %d\n", m.SeqNum)
 		info := handleOneMessage(m, section)
-		if info.Date.IsZero() {
-			log.Fatal("Date is zero, Closed by remote server?", info)
-		}
+		// if info.Date.IsZero() {
+		// 	log.Fatal("Date is zero, Closed by remote server?", info)
+		// }
 		result = append(result, info)
 		count++
 		if count%20 == 0 {
