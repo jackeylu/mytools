@@ -222,7 +222,7 @@ func fetchAndSaveEmails() {
 		log.Fatal(err)
 	}
 
-	util.WriteExcelFileByFunction("email.xlsx", ExcelFileHeader(), func() [][]string {
+	util.AppendExcelFileByFunction("email.xlsx", ExcelFileHeader(), func() [][]string {
 		var ans [][]string
 		for _, v := range result {
 			ans = append(ans, []string{

@@ -43,11 +43,17 @@ func ReadExcelFile(excelFile string, f func(int, []string) error, ignoreHeader b
 	return nil
 }
 
-func WriteExcelFileByFunction(excelFile string, columns []string, f func() [][]string) {
-	WriteExcelFile(excelFile, columns, f())
+// AppendExcelFileByFunction 覆盖写数据到excel文件中
+func AppendExcelFileByFunction(excelFile string, columns []string, f func() [][]string) {
+	WriteOrAppendExcelFile(excelFile, columns, f(), true)
 }
 
+// WriteExcelFile 覆盖写数据到excel文件中
 func WriteExcelFile(excelFile string, columns []string, data [][]string) error {
+	return WriteOrAppendExcelFile(excelFile, columns, data, false)
+}
+
+func WriteOrAppendExcelFile(excelFile string, columns []string, data [][]string, append bool) error {
 	if len(data) == 0 {
 		fmt.Print("No data to handle.")
 		return nil
@@ -59,18 +65,30 @@ func WriteExcelFile(excelFile string, columns []string, data [][]string) error {
 	file := excelize.NewFile()
 	defer file.Close()
 
-	// TODO 追加到excel文件后面
-	// TODO seqNum写到邮件里面
-	// write header
-	cell, err := excelize.CoordinatesToCellName(1, 1)
-	if err != nil {
-		fmt.Println(err)
-		return err
+	rowNum := -1
+	if append && fileExists(excelFile) {
+		ReadExcelFile(excelFile, func(i int, row []string) error {
+			cell, err := excelize.CoordinatesToCellName(1, i+1)
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+			file.SetSheetRow("Sheet1", cell, &row)
+			rowNum = i
+			return nil
+		}, false)
 	}
-	file.SetSheetRow("Sheet1", cell, &columns)
-
+	if rowNum == -1 {
+		// write header
+		cell, err := excelize.CoordinatesToCellName(1, 1)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+		file.SetSheetRow("Sheet1", cell, &columns)
+	}
 	for idx, row := range data {
-		cell, err := excelize.CoordinatesToCellName(1, idx+2)
+		cell, err := excelize.CoordinatesToCellName(1, rowNum+idx+2)
 		if err != nil {
 			fmt.Println(err)
 			return err
