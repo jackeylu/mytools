@@ -270,7 +270,7 @@ func EncodeTime(t time.Time) string {
 func DecodeTime(s string) time.Time {
 	r, err := time.Parse("2006-01-02T15:04:05 +080000", s)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("time", s, err)
 	}
 	return r
 }

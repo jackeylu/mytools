@@ -86,6 +86,14 @@ The output will be like:
 
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// 设置日志文件的格式
+		log.SetFlags(log.LstdFlags | log.Lmicroseconds | log.Lshortfile)
+		// 创建一个 LoggerWriter 对象
+		logger := util.NewLoggerWriter("logfile.txt")
+		defer logger.Close()
+		// 将日志同时输出到终端和日志文件
+		log.SetOutput(logger)
+
 		var emails []EmailInfo
 		if err := readFetchedEmailFile(emailFile, &emails); err != nil {
 			log.Println(err)
@@ -133,16 +141,16 @@ func readFetchedEmailFile(emailFile string, emails *[]EmailInfo) error {
 			}
 		}
 		// ignore email without any attachment
-		if len(columns) < 5 {
+		if len(columns) < 6 {
 			return nil
 		}
-		date := DecodeTime(columns[0])
+		date := DecodeTime(columns[1])
 		// handle the contents
 		*emails = append(*emails, EmailInfo{
 			Date:        date,
-			From:        columns[1],
-			Subject:     columns[3],
-			Attachments: DecodeAttachments(columns[4]),
+			From:        columns[2],
+			Subject:     columns[4],
+			Attachments: DecodeAttachments(columns[5]),
 		})
 		return nil
 	}, false)
@@ -246,10 +254,12 @@ func extractStudentNameAndIDAndLabName(subjectOrAttachment string, labsMap map[s
 func extractStudentNameAndIDAndLabs(subject string, attachments []string, labsMap map[string]Course) (
 	name string, id string, labs []string, err error) {
 	if len(subject) == 0 {
-		log.Fatal("No subject found")
+		err = fmt.Errorf("no subject found")
+		return
 	}
 	if len(attachments) == 0 {
-		log.Fatal("No attachments found")
+		err = fmt.Errorf("no attachments found")
+		return
 	}
 	name, id, labs, err = "", "", []string{}, nil
 
@@ -264,6 +274,7 @@ func extractStudentNameAndIDAndLabs(subject string, attachments []string, labsMa
 				return
 			}
 		}
+		err = nil
 		labs = removeDuplicate(labs)
 		return
 	} else {
