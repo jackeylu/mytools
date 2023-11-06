@@ -167,10 +167,10 @@ func fetchAndSaveEmails() {
 	} else {
 		log.Println("Messages:", mbox.Messages)
 	}
-	if size > 50 {
-		size = 50
-		log.Println("Size is too large, set to 50")
-	}
+	// if size > 50 {
+	// 	size = 50
+	// 	log.Println("Size is too large, set to 50")
+	// }
 	if startFetch == 0 {
 		endFetch = mbox.Messages
 		startFetch = mbox.Messages - size - 1
