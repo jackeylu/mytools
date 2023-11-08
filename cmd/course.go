@@ -373,8 +373,14 @@ func extractStudentNameAndID(s string) (name, id string, err error) {
 	} else {
 		name, id = fields[0], fields[1]
 
-		if !util.IsAllCharacterDigit(id) {
+		// id 不都是数字组成，name 都是数字组成，则进行交换
+		if !util.IsAllCharacterDigit(id) && util.IsAllCharacterDigit(name) {
 			name, id = id, name
+			return
+		}
+		if !util.IsAllCharacterDigit(id) {
+			name, id = "", ""
+			err = fmt.Errorf("illegal input: %s, lack of name and id", s)
 		}
 		return
 	}
