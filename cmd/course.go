@@ -239,20 +239,20 @@ func findAndBuildResults(email EmailInfo, labsMap map[string]Course) []emailResu
 	return results
 }
 
-func findLab(subjectOrFilename string, labsMap map[string]Course) (fullLabName, usedLabName, courseName string, err error) {
-	fullLabName, usedLabName, courseName, err = "", "", "", nil
+func findLab(subjectOrFilename string, labsMap map[string]Course) (fullLabName, removedLabName, courseName string, err error) {
+	fullLabName, removedLabName, courseName, err = "", "", "", nil
 	for key, course := range labsMap {
 		if strings.Contains(strings.ToUpper(subjectOrFilename), strings.ToUpper(key)) {
 			fullLabName = key
-			usedLabName = key
+			removedLabName = strings.Replace(strings.ToUpper(subjectOrFilename), strings.ToUpper(key), "", 1)
 			courseName = course.CourseName
 			return
 		} else {
 			// try with longest common substring
-			substr := util.LongestCommonSubstr(subjectOrFilename, key)
+			substr := util.LongestCommonSubstr(strings.ToUpper(subjectOrFilename), strings.ToUpper(key))
 			if substr != "" && len(substr) > 4 {
 				fullLabName = key
-				usedLabName = substr
+				removedLabName = strings.Replace(strings.ToUpper(subjectOrFilename), strings.ToUpper(substr), "", 1)
 				courseName = course.CourseName
 				return
 			}
@@ -266,13 +266,13 @@ func extractStudentNameAndIDAndLabName(subjectOrAttachment string, labsMap map[s
 	name, id, courseName, lab string, err error) {
 	name, id, err0 := extractStudentNameAndID(subjectOrAttachment)
 	// 根据email中的subject和attachments字段，
-	lab, usedLabName, courseName, err := findLab(subjectOrAttachment, labsMap)
+	lab, removedLabName, courseName, err := findLab(subjectOrAttachment, labsMap)
 	if err != nil {
 		return
 	}
-	if err0 != nil || len(name) > 4 {
+	if err0 != nil || len(name) > len("四字姓名") {
 		// 未找到学生信息，将课程实验名去掉再找找看
-		name, id, err = extractStudentNameAndID(strings.ReplaceAll(subjectOrAttachment, usedLabName, ""))
+		name, id, err = extractStudentNameAndID(removedLabName)
 	}
 	return
 }
@@ -293,19 +293,21 @@ func extractStudentNameAndIDAndLabs(subject string, attachments []string, labsMa
 	if err != nil {
 		// 主题中未找到实验名
 		for _, attachment := range attachments {
-			if name_temp, id_temp, courseName0, lab, err0 := extractStudentNameAndIDAndLabName(attachment, labsMap); err0 == nil {
-				if name == "" {
-					name = name_temp
-					id = id_temp
-				}
-				if courseName == "" {
-					courseName = courseName0
-				}
+			name_temp, id_temp, courseName0, lab, err0 := extractStudentNameAndIDAndLabName(attachment, labsMap)
+			if name == "" && name_temp != "" {
+				name = name_temp
+			}
+			if id == "" && id_temp != "" {
+				id = id_temp
+			}
+			if courseName == "" && courseName0 != "" {
+				courseName = courseName0
+			}
+			if lab != "" {
 				labs = append(labs, lab)
-			} else {
+			}
+			if err0 != nil && (name == "" || id == "" || lab == "") {
 				log.Printf("Failed to find student name/ID and lab name from attachment %s: %v\n", attachment, err0)
-				err = err0
-				return
 			}
 		}
 		err = nil
@@ -388,7 +390,8 @@ func extractStudentNameAndIDRegex(tidy string) (name, id string, err error) {
 			}
 		}
 	}
-	if s == -1 || e == -1 || (e-s) < 6 {
+	// 获得的学号长度不够
+	if s == -1 || e == -1 || (e-s) < 5 {
 		err = fmt.Errorf("illegal input: %s, lack of name and id", tidy)
 		return
 	}

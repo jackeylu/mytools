@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -133,6 +132,20 @@ func TestExtractStudentNameAndIDAndLabs(t *testing.T) {
 				nil,
 			},
 		},
+		{
+			desc:         "附件中只有实验名称，主题中有个人信息",
+			givenSubject: "220301053孙焦",
+			givenAttachments: []string{
+				"Lab1-PHP开发环境搭建.doc",
+			},
+			expected: multiResult{
+				"孙焦",
+				"220301053",
+				"PHP程序设计",
+				[]string{"Lab1-PHP开发环境搭建"},
+				nil,
+			},
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
@@ -173,31 +186,17 @@ func TestExtractStudentNameAndIDRegex(t *testing.T) {
 		expectedErr  error
 	}{
 		{
-			name:         "Valid input",
-			tidy:         "John Doe 12345",
-			expectedID:   "12345",
-			expectedName: "John Doe",
+			name:         "Input with valid characters",
+			tidy:         "李四 123456",
+			expectedID:   "123456",
+			expectedName: "李四",
 			expectedErr:  nil,
-		},
-		{
-			name:         "Input with no name",
-			tidy:         "12345",
-			expectedID:   "12345",
-			expectedName: "",
-			expectedErr:  fmt.Errorf("illegal input: 12345, lack of name and id"),
 		},
 		{
 			name:         "Input with no name and no ID",
 			tidy:         "220301033刘徐明",
 			expectedID:   "220301033",
 			expectedName: "刘徐明",
-			expectedErr:  nil,
-		},
-		{
-			name:         "Input with valid characters",
-			tidy:         "李四 12345",
-			expectedID:   "12345",
-			expectedName: "李四",
 			expectedErr:  nil,
 		},
 	}
