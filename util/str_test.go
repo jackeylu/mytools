@@ -37,3 +37,38 @@ func TestReg(t *testing.T) {
 	f("李四2200023011张三")
 
 }
+
+func TestLongestCommonSubstr(t *testing.T) {
+	testCases := []struct {
+		desc string
+		s1   string
+		s2   string
+		want string
+	}{
+		{
+			desc: "英文",
+			s1:   "OldSite: The old URL of this website",
+			s2:   "NewSite: The new URL of this website",
+			want: " URL of this website",
+		},
+		{
+			desc: "中文",
+			s1:   "Lab5-文件上传+文件投票+目录遍历",
+			s2:   "220301049李欣蕊-文件上传+文件投票+目录遍历",
+			want: "-文件上传+文件投票+目录遍历",
+		},
+		{
+			desc: "没有公共子串",
+			s1:   "OldSite: The old URL of this website",
+			s2:   "220301049李欣蕊-文件上传+文件投票+目录遍历",
+			want: "",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			if got := LongestCommonSubstr(tC.s1, tC.s2); got != tC.want {
+				t.Errorf("got %q, want %q", got, tC.want)
+			}
+		})
+	}
+}
