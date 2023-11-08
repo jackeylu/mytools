@@ -11,6 +11,7 @@ func init() {
 		CourseName: "PHP程序设计",
 		Labs: []string{
 			"Lab1-PHP开发环境搭建",
+			"Lab2-PHP基础知识",
 		},
 		CourseStudents: []CourseStudent{
 			{
@@ -22,6 +23,7 @@ func init() {
 	var pythonCourse = Course{
 		CourseName: "Python程序设计",
 		Labs: []string{
+			"Lab0-基础语法",
 			"Homework1-Python字符串",
 		},
 		CourseStudents: []CourseStudent{
@@ -32,6 +34,8 @@ func init() {
 		},
 	}
 	labMaps["Lab1-PHP开发环境搭建"] = phpCourse
+	labMaps["Lab2-PHP基础知识"] = phpCourse
+	labMaps["Lab0-基础语法"] = pythonCourse
 	labMaps["Homework1-Python字符串"] = pythonCourse
 }
 
@@ -143,6 +147,20 @@ func TestExtractStudentNameAndIDAndLabs(t *testing.T) {
 				"220301053",
 				"PHP程序设计",
 				[]string{"Lab1-PHP开发环境搭建"},
+				nil,
+			},
+		},
+		{
+			desc:         "附件或主题中的公共子串在多门课出现：基础",
+			givenSubject: "220301101项升杰-PHP基础知识",
+			givenAttachments: []string{
+				"220301101项升杰-PHP基础知识.doc",
+			},
+			expected: multiResult{
+				"项升杰",
+				"220301101",
+				"PHP程序设计",
+				[]string{"Lab2-PHP基础知识"},
 				nil,
 			},
 		},

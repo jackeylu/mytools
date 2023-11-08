@@ -241,6 +241,7 @@ func findAndBuildResults(email EmailInfo, labsMap map[string]Course) []emailResu
 
 func findLab(subjectOrFilename string, labsMap map[string]Course) (fullLabName, removedLabName, courseName string, err error) {
 	fullLabName, removedLabName, courseName, err = "", "", "", nil
+	longestSubstr := ""
 	for key, course := range labsMap {
 		if strings.Contains(strings.ToUpper(subjectOrFilename), strings.ToUpper(key)) {
 			fullLabName = key
@@ -250,15 +251,18 @@ func findLab(subjectOrFilename string, labsMap map[string]Course) (fullLabName, 
 		} else {
 			// try with longest common substring
 			substr := util.LongestCommonSubstr(strings.ToUpper(subjectOrFilename), strings.ToUpper(key))
-			if substr != "" && len(substr) > 4 {
+			if substr != "" && len(substr) > 4 && len(substr) > len(longestSubstr) {
 				fullLabName = key
 				removedLabName = strings.Replace(strings.ToUpper(subjectOrFilename), strings.ToUpper(substr), "", 1)
+				longestSubstr = substr
 				courseName = course.CourseName
-				return
+				// return
 			}
 		}
 	}
-	err = fmt.Errorf("邮件主题/附件名称中未找到实验名")
+	if fullLabName == "" {
+		err = fmt.Errorf("邮件主题/附件名称中未找到实验名")
+	}
 	return
 }
 
