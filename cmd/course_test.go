@@ -164,6 +164,90 @@ func TestExtractStudentNameAndIDAndLabs(t *testing.T) {
 				nil,
 			},
 		},
+		{
+			desc:         "姓名学号+Lab数字的场景",
+			givenSubject: "朱曼桢220301089-Lab1-PHP开发环境搭建",
+			givenAttachments: []string{
+				"朱曼桢220301089-Lab1-PHP开发环境搭建.doc",
+			},
+			expected: multiResult{
+				"朱曼桢",
+				"220301089",
+				"PHP程序设计",
+				[]string{"Lab1-PHP开发环境搭建"},
+				nil,
+			},
+		},
+		{
+			desc:         "只有实验名的场景",
+			givenSubject: "Lab1-PHP开发环境搭建",
+			givenAttachments: []string{
+				"Lab1-PHP开发环境搭建.doc",
+			},
+			expected: multiResult{
+				"",
+				"",
+				"PHP程序设计",
+				[]string{"Lab1-PHP开发环境搭建"},
+				nil,
+			},
+		},
+		{
+			desc:         "加入了年级、班级干扰",
+			givenSubject: "22级信安一班 220301013 陈晓艳",
+			givenAttachments: []string{
+				"220301013陈晓艳Lab1-PHP开发环境搭建.doc",
+			},
+			expected: multiResult{
+				"",
+				"",
+				"PHP程序设计",
+				[]string{"Lab1-PHP开发环境搭建"},
+				nil,
+			},
+		},
+		{
+			desc:         "名字前面加入了班级",
+			givenSubject: "信安一班张芬220301011",
+			givenAttachments: []string{
+				"220301011张芬-Lab1-PHP开发环境搭建.doc",
+			},
+			expected: multiResult{
+				"",
+				"",
+				"PHP程序设计",
+				[]string{"Lab1-PHP开发环境搭建"},
+				nil,
+			},
+		},
+		{
+			desc:         "有多个英文半角点号",
+			givenSubject: "信安一班.220301006.刘子萱",
+			givenAttachments: []string{
+				"刘子萱 220301006-Lab1-PHP开发环境搭建.doc",
+			},
+			expected: multiResult{
+				"",
+				"",
+				"PHP程序设计",
+				[]string{"Lab1-PHP开发环境搭建"},
+				nil,
+			},
+		},
+		{
+			desc:         "有中文句号的场景",
+			givenSubject: "220301104   王凯lab2-php基础知识。",
+			givenAttachments: []string{
+				"220301104   王凯lab2-php基础知识。.doc",
+			},
+			expected: multiResult{
+				"",
+				"",
+				"PHP程序设计",
+				[]string{"Lab1-PHP开发环境搭建"},
+				nil,
+			},
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
@@ -172,21 +256,21 @@ func TestExtractStudentNameAndIDAndLabs(t *testing.T) {
 				t.Errorf("Expected error %v, but got %v", nil, err)
 			} else {
 				if name != tC.expected.name {
-					t.Errorf("Expected name %s, but got %s", tC.expected.name, name)
+					t.Errorf("Expected name =[%s], but got = [%s]", tC.expected.name, name)
 				}
 
 				if id != tC.expected.id {
-					t.Errorf("Expected id %s, but go %s", tC.expected.id, id)
+					t.Errorf("Expected id = [%s], but got =[%s]", tC.expected.id, id)
 				}
 				if courseName != tC.expected.courseName {
-					t.Errorf("Expected courseName %s, but got %s", tC.expected.courseName, courseName)
+					t.Errorf("Expected courseName = [%s], but got =[%s]", tC.expected.courseName, courseName)
 				}
 				if len(labs) != len(tC.expected.labs) {
 					t.Errorf("Expected labs %v, but got %v", tC.expected.labs, labs)
 				} else {
 					for i, lab := range labs {
 						if lab != tC.expected.labs[i] {
-							t.Errorf("Expected lab %s, but got %s", tC.expected.labs[i], lab)
+							t.Errorf("Expected lab =[%s], but got =[%s]", tC.expected.labs[i], lab)
 						}
 					}
 				}
