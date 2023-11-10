@@ -55,6 +55,53 @@ type multiResult struct {
 	err        error
 }
 
+func TestCleanStudentProjectName(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		given    string
+		expected string
+	}{
+		{
+			desc:     "能够处理姓名和实验名之间没有间隔的场景",
+			given:    "220301093易思敏Lab1-PHP开发环境搭建",
+			expected: "220301093易思敏Lab1-PHP开发环境搭建",
+		},
+		{
+			desc:     "包含中文的句号",
+			given:    "220301093易思敏.Lab1-PHP开发环境搭建。doc",
+			expected: "220301093易思敏-Lab1-PHP开发环境搭建.doc",
+		},
+		{
+			desc:     "有多个英文.",
+			given:    "220301093.易思敏.Lab1-PHP开发环境搭建.doc",
+			expected: "220301093-易思敏-Lab1-PHP开发环境搭建.doc",
+		},
+		{
+			desc:     "头尾有空格",
+			given:    " 220301093-易思敏-Lab1-PHP开发环境搭建.doc ",
+			expected: "220301093-易思敏-Lab1-PHP开发环境搭建.doc",
+		},
+		{
+			desc:     "中间有空格",
+			given:    "220301093 易思敏 Lab1-PHP开发环境搭建.doc",
+			expected: "220301093-易思敏-Lab1-PHP开发环境搭建.doc",
+		},
+		{
+			desc:     "中间有连续多个空格",
+			given:    "220301093 易思敏  Lab1-PHP开发环境搭建.doc",
+			expected: "220301093-易思敏-Lab1-PHP开发环境搭建.doc",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			actual := cleanStudentProjectName(tC.given)
+			if actual != tC.expected {
+				t.Errorf("Expected %v, but got %v", tC.expected, actual)
+			}
+		})
+	}
+}
+
 func TestExtractStudentNameAndLabName(t *testing.T) {
 
 	testCases := []struct {

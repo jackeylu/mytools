@@ -281,8 +281,40 @@ func extractStudentNameAndIDAndLabName(subjectOrAttachment string, labsMap map[s
 	return
 }
 
+func cleanStudentProjectName(projectName string) string {
+	ans := projectName
+	// 替换可能的中文句号为英文句号
+	ans = strings.Replace(ans, "。", ".", -1)
+	// 替换n个英文句号中的n-1个为'-'符号，保留最后一个英文句号
+	counts := strings.Count(ans, ".")
+	if counts > 1 {
+		ans = strings.Replace(ans, ".", "-", counts-1)
+	}
+	// 移除头尾的空格
+	ans = strings.TrimSpace(ans)
+	// 遍历字符串，将遇到的单个空格或连续多个空格替换成一个'-'
+	temp := ans
+	ans = ""
+	for _, char := range temp {
+		if char == ' ' {
+			if ans[len(ans)-1] != '-' {
+				ans = ans + "-"
+			}
+		} else {
+			ans = ans + string(char)
+		}
+	}
+
+	return ans
+}
+
 func extractStudentNameAndIDAndLabs(subject string, attachments []string, labsMap map[string]Course) (
 	name, id, courseName string, labs []string, err error) {
+	subject = cleanStudentProjectName(subject)
+	for i, v := range attachments {
+		attachments[i] = cleanStudentProjectName(v)
+	}
+
 	if len(subject) == 0 {
 		err = fmt.Errorf("no subject found")
 		return
