@@ -210,6 +210,8 @@ github.com/xuri/excelize/v2 v2.8.0/go.mod h1:6iA2edBTKxKbZAa7X5bDhcCg51xdOn1Ar5s
 github.com/xuri/nfp v0.0.0-20230819163627-dc951e3ffe1a/go.mod h1:WwHg+CVyzlv/TX9xqBFXEZAuxOPxn2k1GNHwG41IIUQ=
 github.com/xuri/nfp v0.0.0-20230919160717-d98342af3f05 h1:qhbILQo1K3mphbwKh1vNm4oGezE1eF9fQWmNiIpSfI4=
 github.com/xuri/nfp v0.0.0-20230919160717-d98342af3f05/go.mod h1:WwHg+CVyzlv/TX9xqBFXEZAuxOPxn2k1GNHwG41IIUQ=
+github.com/yanyiwu/gojieba v1.3.0 h1:6VeaPOR+MawnImdeSvWNr7rP4tvUfnGlEKaoBnR33Ds=
+github.com/yanyiwu/gojieba v1.3.0/go.mod h1:54wkP7sMJ6bklf7yPl6F+JG71dzVUU1WigZbR47nGdY=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

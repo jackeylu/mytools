@@ -72,3 +72,44 @@ func TestLongestCommonSubstr(t *testing.T) {
 		})
 	}
 }
+
+func TestIsChineseName(t *testing.T) {
+	testCases := []struct {
+		desc string
+		name string
+		want bool
+	}{
+		{
+			desc: "英文",
+			name: "OldSite: The old URL of this website",
+			want: false,
+		},
+		{
+			desc: "中文",
+			name: "张三",
+			want: true,
+		},
+		{
+			desc: "班级名",
+			name: "计科3班",
+			want: false,
+		},
+		{
+			desc: "班级名数字中文",
+			name: "信安一班",
+			want: false,
+		},
+		{
+			desc: "长的中文名，例如维吾尔族姓名",
+			name: "迪丽热巴·买买提",
+			want: true,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			if got := isChineseName(tC.name); got != tC.want {
+				t.Errorf("got %t, want %t", got, tC.want)
+			}
+		})
+	}
+}
