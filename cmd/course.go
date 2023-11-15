@@ -292,6 +292,8 @@ func cleanStudentProjectName(projectName string) string {
 	}
 	// 移除头尾的空格
 	ans = strings.TrimSpace(ans)
+	// 将所有的下划线替换成'-'
+	ans = strings.ReplaceAll(ans, "_", "-")
 	// 遍历字符串，将遇到的单个空格或连续多个空格替换成一个'-'
 	temp := ans
 	ans = ""
@@ -299,6 +301,20 @@ func cleanStudentProjectName(projectName string) string {
 		if char == ' ' {
 			if ans[len(ans)-1] != '-' {
 				ans = ans + "-"
+			}
+		} else {
+			ans = ans + string(char)
+		}
+	}
+	// 去掉头尾的'-'
+	ans = strings.Trim(ans, "-")
+	// 去掉中间的连续多个'-'
+	temp = ans
+	ans = ""
+	for _, char := range temp {
+		if char == '-' {
+			if ans[len(ans)-1] != '-' {
+				ans = ans + string(char)
 			}
 		} else {
 			ans = ans + string(char)
@@ -382,22 +398,19 @@ func removeDuplicate(s []string) []string {
 
 // extractStudentNameAndID extracts student name and id from a string removed the labname
 func extractStudentNameAndID(s string) (name, id string, err error) {
+	s = cleanStudentProjectName(s)
+	fields := strings.Split(s, "-")
 	name, id, err = "", "", nil
-	tidy := strings.ReplaceAll(
-		// 2. replace space with '-'
-		strings.ReplaceAll(
-			// 1. replace leading and trailing space and '_' with '-'
-			strings.TrimSpace(s), "_", "-"),
-		" ", "-")
-	tidys := strings.Split(tidy, ".")
-	if len(tidys) > 1 {
-		tidy = strings.Join(tidys[:len(tidys)-1], ".")
+	for i, v := range fields {
+		v = strings.TrimSpace(v)
+		// TODO 一个个field检查，是否是学号、姓名
+		if v == "" {
+			fields = append(fields[:i], fields[i+1:]...)
+		}
 	}
-	tidy = strings.Trim(tidy, "-")
-	fields := strings.Split(tidy, "-")
 	if len(fields) < 2 {
 		// try with regular expression
-		if name, id, err = extractStudentNameAndIDRegex(tidy); err == nil {
+		if name, id, err = extractStudentNameAndIDRegex(s); err == nil {
 			return
 		}
 		err = fmt.Errorf("illegal input: %s, lack of name and id", s)
@@ -408,9 +421,8 @@ func extractStudentNameAndID(s string) (name, id string, err error) {
 		// id 不都是数字组成，name 都是数字组成，则进行交换
 		if !util.IsAllCharacterDigit(id) && util.IsAllCharacterDigit(name) {
 			name, id = id, name
-			return
 		}
-		if !util.IsAllCharacterDigit(id) {
+		if !util.IsAllCharacterDigit(id) || len(id) < 6 {
 			name, id = "", ""
 			err = fmt.Errorf("illegal input: %s, lack of name and id", s)
 		}

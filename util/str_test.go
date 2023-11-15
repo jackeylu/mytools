@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"testing"
+
+	"github.com/yanyiwu/gojieba"
 )
 
 func TestIsAllCharacterDigit(t *testing.T) {
@@ -85,8 +87,8 @@ func TestIsChineseName(t *testing.T) {
 			want: false,
 		},
 		{
-			desc: "中文",
-			name: "张三",
+			desc: "包含中文姓名",
+			name: "刘毅先",
 			want: true,
 		},
 		{
@@ -105,9 +107,11 @@ func TestIsChineseName(t *testing.T) {
 			want: true,
 		},
 	}
+	x := gojieba.NewJieba()
+	defer x.Free()
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			if got := isChineseName(tC.name); got != tC.want {
+			if got := isChineseName(tC.name, x); got != tC.want {
 				t.Errorf("got %t, want %t", got, tC.want)
 			}
 		})
