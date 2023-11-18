@@ -295,6 +295,20 @@ func TestExtractStudentNameAndIDAndLabs(t *testing.T) {
 				nil,
 			},
 		},
+		{
+			desc:         "有括号的的场景",
+			givenSubject: "220301104-王凯-lab2-php基础知识(1)。",
+			givenAttachments: []string{
+				"220301104-王凯-lab2-php基础知识(1).doc",
+			},
+			expected: multiResult{
+				"王凯",
+				"220301104",
+				"PHP程序设计",
+				[]string{"Lab2-PHP基础知识"},
+				nil,
+			},
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
