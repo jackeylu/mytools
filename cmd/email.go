@@ -173,7 +173,11 @@ func fetchAndSaveEmails() {
 	// }
 	if startFetch == 0 {
 		endFetch = mbox.Messages
-		startFetch = mbox.Messages - size - 1
+		if mbox.Messages > size {
+			startFetch = mbox.Messages - size - 1
+		} else {
+			startFetch = 1
+		}
 	} else {
 		if startFetch > mbox.Messages {
 			startFetch = mbox.Messages - 1
