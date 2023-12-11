@@ -1,12 +1,5 @@
 package util
 
-import (
-	"strings"
-	"unicode/utf8"
-
-	"github.com/yanyiwu/gojieba"
-)
-
 func IsAllCharacterDigit(str string) bool {
 	for _, v := range str {
 		if v < '0' || v > '9' {
@@ -41,19 +34,4 @@ func LongestCommonSubstr(s1, s2 string) string {
 	}
 
 	return s1[endIndex-maxLen : endIndex]
-}
-
-func isChineseName(name string, x *gojieba.Jieba) bool {
-	if name == "" || len(name) < 2 || utf8.RuneCountInString(name) > 12 {
-		return false
-	}
-
-	words := x.Tag(name)
-	for _, word := range words {
-		if strings.Index(word, "/nr") == -1 {
-			return false
-		}
-	}
-
-	return true
 }
