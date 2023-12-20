@@ -283,7 +283,7 @@ func TestExtractStudentNameAndIDAndLabs(t *testing.T) {
 		},
 		{
 			desc:         "有中文句号的场景",
-			givenSubject: "220301104   王凯lab2-php基础知识。",
+			givenSubject: "220301104   王凯-lab2-php基础知识。",
 			givenAttachments: []string{
 				"220301104   王凯lab2-php基础知识。.doc",
 			},

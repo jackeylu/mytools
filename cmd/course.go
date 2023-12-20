@@ -283,8 +283,8 @@ func extractStudentNameAndIDAndLabName(subjectOrAttachment string, labsMap map[s
 
 func cleanStudentProjectName(projectName string) string {
 	ans := projectName
-	// 替换可能的中文句号为英文句号
-	ans = strings.Replace(ans, "。", ".", -1)
+	// 删除可能的中文句号
+	ans = strings.Replace(ans, "。", "", -1)
 	// 替换n个英文句号中的n-1个为'-'符号，保留最后一个英文句号
 	counts := strings.Count(ans, ".")
 	if counts > 1 {
@@ -318,6 +318,20 @@ func cleanStudentProjectName(projectName string) string {
 			}
 		} else {
 			ans = ans + string(char)
+		}
+	}
+	// 去掉字符串中可能存在的圆括号及圆括号内的内容
+	for {
+		if strings.Contains(ans, "(") && strings.Contains(ans, ")") {
+			// 获取第一个左括号的索引和第一个右括号的索引
+			// 如果左括号在右括号之前，则将左括号和右括号之间的内容都去掉
+			leftIndex := strings.Index(ans, "(")
+			rightIndex := strings.Index(ans, ")")
+			if leftIndex < rightIndex {
+				ans = strings.Replace(ans, ans[leftIndex:rightIndex+1], "", 1)
+			}
+		} else {
+			break
 		}
 	}
 
